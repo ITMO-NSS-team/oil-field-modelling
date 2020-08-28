@@ -1,11 +1,16 @@
 # The toolbox for the oil fields modelling
 
-This repository contains the toolbox for the oil fields modelling and analysis (oil forecasting, seismic slices classification, etc). The Volve field is used a case study.
-
-## Seismic analysis
-The 'seismic_analysis' folder contains jupiter notebook seismic_inversion.ipynb. Notebook shows how to convert a segy file to numpy.array format, perform an inversion operation on the resulting data,  and prepare training and validation data sets of seimic time slices images. 
-The CNN baseline model for binary image classification is also implemented.
+This repository contains the toolbox for the oil fields modelling and analysis (oil forecasting, seismic slices classification, etc). The Volve field is used as a case study.
 
 ## Oil production forecasting
 
-The 'production_forecasting' folder contains the oil_production_forecasting_problem.py script, that allow to forecast oil production with different model (CRMIP, ML-based, hybrid, composite, etc).
+The 'production_forecasting' folder contains the oil_production_forecasting_problem.py script, that allows forecasting oil production with a different model (CRMIP, ML-based, hybrid, composite, etc).
+
+To execute and optimise the forecasting models, the [FEDOT Framework](https://github.com/nccr-itmo/FEDOT) is used.
+
+## Seismic analysis
+The 'seismic_analysis' folder contains Jupiter notebook seismic_inversion.ipynb. The notebook shows how to convert a .segy file to NumPy array format, perform an inversion operation on the resulting data,  and prepare training and validation data sets of seismic time slices images. 
+The CNN baseline model for binary image classification is also implemented.
+
+To find the optimal CNN architecture, the [FEDOT-NAS tool](https://github.com/ITMO-NSS-team/nas-fedot) is used.
+
