@@ -23,8 +23,8 @@ from core.utils import project_root
 
 # static example of the composite chain (without optimisation)
 def get_comp_chain():
-    node_first = PrimaryNode('rfr')
-    node_second = PrimaryNode('dtreg')
+    node_first = PrimaryNode('lstm')
+    node_second = PrimaryNode('rfr')
 
     node_final = SecondaryNode('linear',
                                nodes_from=[node_first, node_second],
@@ -183,8 +183,8 @@ def run_oil_forecasting_problem(train_file_path,
         dataset_to_validate_local = dataset_to_validate.subset(start + depth, end + depth)
         dataset_to_validate_local_crm = dataset_to_validate_crm.subset(start + depth, end + depth)
 
-        chain_simple = Chain(PrimaryNode('rfr'))
-        chain_simple_crm = Chain(PrimaryNode('rfr'))
+        chain_simple = Chain(PrimaryNode('lstm'))
+        chain_simple_crm = Chain(PrimaryNode('lstm'))
         chain_crm_opt = get_comp_chain()
 
         chain_simple.fit_from_scratch(input_data=dataset_to_train_local, verbose=False)
@@ -222,10 +222,10 @@ if __name__ == '__main__':
     # the dataset was obtained from Volve dataset of oil field
 
     for well in ['5351', '5599', '7078', '7289', '7405f']:
-        full_path_train_crm = f'../production_forecasting/data/oil_crm_X{well}.csv'
+        full_path_train_crm = f'../production_forecasting/data/oil_crm_prod_X{well}.csv'
         full_path_train_crm = os.path.join(str(project_root()), full_path_train_crm)
 
-        file_path_train = f'../production_forecasting/data/oil_X{well}.csv'
+        file_path_train = f'../production_forecasting/data/oil_prod_X{well}.csv'
         full_path_train = os.path.join(str(project_root()), file_path_train)
 
         run_oil_forecasting_problem(full_path_train,
