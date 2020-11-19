@@ -1,6 +1,8 @@
 # The toolbox for the oil fields modelling
 
 This repository contains the toolbox for the oil fields modelling and analysis (oil forecasting, seismic slices classification, etc). The Volve field is used as a case study.
+The source data for the dataset can be found here -  “volvo oil forecasting dataset”, Mendeley Data, V1, doi: 10.17632/g2vxy237h5.1 
+(URL-https://data.mendeley.com/datasets/g2vxy237h5/1)
 
 ## Oil production forecasting
 
