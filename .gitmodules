@@ -1,4 +1,0 @@
-[submodule "FEDOT"]
-	path = FEDOT
-	url = https://github.com/nccr-itmo/FEDOT
-	branch = ts-forecasting-new
