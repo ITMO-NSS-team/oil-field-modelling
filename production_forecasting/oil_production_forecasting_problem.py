@@ -14,11 +14,11 @@ forecast_window_shift_num = 4
 depth = 100
 
 
-def run_oil_forecasting_problem(train_file_path,
-                                train_file_path_crm,
-                                forecast_length, max_window_size,
-                                is_visualise=False,
-                                well_id='Unknown'):
+def run_oil_forecasting(train_file_path,
+                        train_file_path_crm,
+                        forecast_length=25, max_window_size=50,
+                        is_visualise=False,
+                        well_id='Unknown'):
     """
     :param train_file_path: path to the historical well data
     :param train_file_path_crm: path to the CRM forecasts
@@ -117,9 +117,9 @@ if __name__ == '__main__':
         file_path_train = f'data/oil_prod_X{well}.csv'
         full_path_train = os.path.join(str(project_root()), file_path_train)
 
-        run_oil_forecasting_problem(full_path_train,
-                                    full_path_train_crm,
-                                    forecast_length=25,
-                                    max_window_size=50,
-                                    is_visualise=True,
-                                    well_id=well)
+        run_oil_forecasting(full_path_train,
+                            full_path_train_crm,
+                            forecast_length=25,
+                            max_window_size=50,
+                            is_visualise=True,
+                            well_id=well)
