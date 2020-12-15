@@ -22,8 +22,39 @@ The results are available in the working folder (both CSV files, images, and JSO
 
 
 ## Seismic analysis
-The 'seismic_analysis' folder contains Jupiter notebook seismic_inversion.ipynb. The notebook shows how to convert a .segy file to NumPy array format, perform an inversion operation on the resulting data,  and prepare training and validation data sets of seismic time slices images. 
+The 'seismic_analysis' folder contains Jupiter notebooks reservoir_detection_with_cnn.ipynb and oil_reservoir_semantic_segmentation.ipynb. The notebook shows how to convert a .segy file to NumPy array format, perform an inversion operation on the resulting data,  and prepare training and validation data sets of seismic time slices images. 
 The CNN baseline model for binary image classification is also implemented.
 
 To find the optimal CNN architecture, the [FEDOT-NAS tool](https://github.com/ITMO-NSS-team/nas-fedot) is used.
+
+The basic example of the reservoir detection run is the following:
+
+```python
+from seismic_analysis.reservoir_detection_problem import run_reservoir_detection_problem
+
+path_to_segy = r'./Inputs/Stacks/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
+train_dir = r'./Inputs/Images/Train'
+validation_dir = r'./Inputs/Images/Validation'
+test_dir = r'./Inputs/Images/Test'
+model_path = 'r./Outputs/Models/seismic_2.h5'
+run_reservoir_detection_problem(path_to_segy=path_to_segy,
+                                train_path=train_dir,
+                                validation_path=validation_dir,
+                                test_path=test_dir,
+                                model_path=model_path)
+```
+The basic example of the semantic_segmentation reservoir run is the following:
+
+```python
+from seismic_analysis.semantic_segmentation_problem import run_semantic_segmantation_problem
+from toolbox.preprocessing import get_image
+
+image_params = (640, 400, 5)
+np_data_path = r'./Outputs/Seismic_slice/slice.npy'
+vtk_data_path = r'./Outputs/Seismic_slice/image_pred'
+X, y = get_image(image_params)
+run_semantic_segmantation_problem(X, y, np_data_path, vtk_data_path)
+```
+
+The results are available in the working folder (images and numpy ndarrays of seismic slices)
 
