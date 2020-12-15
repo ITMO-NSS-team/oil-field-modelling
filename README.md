@@ -13,8 +13,8 @@ To execute and optimize the forecasting models, the [FEDOT Framework](https://gi
 The basic example of the production forecasting run is the following:
 
 ```python
-from production_forecasting.oil_production_forecasting_problem import run_oil_forecasting
-run_oil_forecasting('historical_data_folder', 'crm_folder', 
+from production_forecasting.oil_production_forecasting import run_oil_forecasting
+run_oil_forecasting('historical_data_folder', 'crm_folder',
                     is_visualise=True, well_id='well_to_forecast')
 ```
 

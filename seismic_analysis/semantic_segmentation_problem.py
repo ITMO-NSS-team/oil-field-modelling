@@ -1,8 +1,9 @@
 import numpy as np
-from toolbox.custom_model import OilModel
-from toolbox.preprocessing import get_image, augmentation
-from toolbox.utils import save_to_vtk
 from sklearn.model_selection import train_test_split
+
+from toolbox.custom_model import OilModel
+from toolbox.preprocessing import augmentation, get_image
+from toolbox.utils import save_to_vtk
 
 
 def run_semantic_segmantation_problem(X: np.ndarray,

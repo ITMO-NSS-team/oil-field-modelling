@@ -1,17 +1,24 @@
 import os
 from copy import copy
+from pathlib import Path
 
+import pandas as pd
 from fedot.core.composer.node import PrimaryNode
 from fedot.core.composer.ts_chain import TsForecastingChain
 from fedot.core.models.data import InputData
 from fedot.core.repository.dataset_types import DataTypesEnum
 from fedot.core.repository.tasks import Task, TaskTypesEnum, TsForecastingParams
 
-from production_forecasting.utils import calculate_validation_metric, get_comp_chain, merge_datasets, project_root
+from toolbox.forecasting_utils import calculate_validation_metric, get_comp_chain, merge_datasets
 
 forecast_window_shift_num = 4
 
 depth = 100
+
+
+def project_root() -> Path:
+    """Returns project root folder."""
+    return Path(__file__).parent
 
 
 def run_oil_forecasting(train_file_path,
@@ -20,7 +27,7 @@ def run_oil_forecasting(train_file_path,
                         is_visualise=False,
                         well_id='Unknown'):
     """
-    :param train_file_path: path to the historical well data
+    :param train_file_path: path to the historical well input_data
     :param train_file_path_crm: path to the CRM forecasts
     :param forecast_length: the length of the forecast for one iteration
     :param max_window_size: the size of the forecast window
@@ -93,6 +100,12 @@ def run_oil_forecasting(train_file_path,
         prediction_full, prediction_full_crm, prediction_full_crm_opt,
         real_data, well_id, is_visualise)
 
+    frame = pd.DataFrame({'simple_pred': prediction.predict,
+                          'prediction_crm': prediction_crm.predict,
+                          'prediction_crm_opt': prediction_crm_opt.predict})
+
+    frame.to_csv(f'predictions_{well_id}.csv')
+
     print(well_id)
     print(f'RMSE CRM: {round(rmse_on_valid_simple[0])}')
     print(f'RMSE ML: {round(rmse_on_valid_simple[1])}')
@@ -111,10 +124,10 @@ if __name__ == '__main__':
     # the dataset was obtained from Volve dataset of oil field
 
     for well in ['5351', '5599', '7078', '7289', '7405f']:
-        full_path_train_crm = f'data/oil_crm_prod_X{well}.csv'
+        full_path_train_crm = f'input_data/oil_crm_prod_X{well}.csv'
         full_path_train_crm = os.path.join(str(project_root()), full_path_train_crm)
 
-        file_path_train = f'data/oil_prod_X{well}.csv'
+        file_path_train = f'input_data/oil_prod_X{well}.csv'
         full_path_train = os.path.join(str(project_root()), file_path_train)
 
         run_oil_forecasting(full_path_train,

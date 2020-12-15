@@ -19,11 +19,6 @@ from fedot.utilities.synthetic.chain_template_new import ChainTemplate
 from sklearn.metrics import mean_squared_error as mse
 
 
-def project_root() -> Path:
-    """Returns project root folder."""
-    return Path(__file__).parent
-
-
 def get_comp_chain(exp_id: str, data: InputData):
     """ Generate the model using evolutionary composer
     :param exp_id: id of the experiment
@@ -70,7 +65,7 @@ def get_comp_chain(exp_id: str, data: InputData):
 
 
 def get_crm_prediction_with_intervals(well_name):
-    file_path_crm = f'data/crmip.csv'
+    file_path_crm = f'input_data/crmip.csv'
     file_path_crm = os.path.join(str(project_root()), file_path_crm)
 
     data_frame = pd.read_csv(file_path_crm, sep=',')
@@ -115,7 +110,7 @@ def calculate_validation_metric(pred: OutputData, pred_crm, pred_crm_opt, valid:
 
 
 def get_crm_intervals(model_name):
-    file_path_crm = f'data/crmip.csv'
+    file_path_crm = f'input_data/crmip.csv'
     file_path_crm = os.path.join(str(project_root()), file_path_crm)
 
     data_frame = pd.read_csv(file_path_crm, sep=',')
