@@ -1,43 +1,45 @@
+from toolbox.custom_model import SeismicModel
+from toolbox.preprocessing import create_inversed_cube, create_seismic_cube, create_wavelet, save_seismic_slices
+import pandas as pd
 import numpy as np
-from toolbox.custom_model import OilModel
-from toolbox.preprocessing import get_image, augmentation
-from sklearn.model_selection import train_test_split
 
-from toolbox.utils import save_to_vtk
+def run_reservoir_detection_problem(path_to_segy: str,
+                                    train_path: str,
+                                    validation_path: str,
+                                    test_path: str,
+                                    model_path: str):
+    origin_cube, borders, grid_step = create_seismic_cube(segyfile_path=path_to_segy)
+    wavelet = create_wavelet(cube=origin_cube,
+                             grid_step=grid_step)
+    inversed_dict = create_inversed_cube(cube=origin_cube,
+                                         wavelet_estimated=wavelet)
+    save_seismic_slices(inversion_dict=inversed_dict,
+                        borders=borders)
 
+    model = SeismicModel(train_path=train_path,
+                         validation_path=validation_path,
+                         test_path=test_path,
+                         model_path=model_path)
 
-def run_reservoir_detection_problem(X: np.ndarray,
-                                    y: np.ndarray,
-                                    path_to_np: str,
-                                    path_to_vtk: str):
+    results = model.fit()
+    model.plot_results(results, loss_flag=True)
 
-    X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=42)
-    X_train, y_train = augmentation(X_train, y_train)
-    X_valid, y_valid = augmentation(X_valid, y_valid)
+    predictions, filenames = model.predict()
 
-    model = OilModel()
-    results = model.fit(train_data=(X_train, y_train),
-                        val_data=(X_valid, y_valid),
-                        batch_size=32,
-                        epochs=50)
+    classes = np.round(predictions)
+    df_with_predictions = pd.DataFrame({"file": filenames, "pr": predictions[:, 0], "class": classes[:, 0]})
 
-    model.plot_learning_curve(results, 'loss')
-    model.plot_learning_curve(results, 'accuracy')
-
-    # Predict on whole dataset
-    preds_train = model.predict(X)
-    # Threshold predictions
-    preds_train_t = (preds_train > 0.5).astype(np.uint8)
-
-    np.save(path_to_np, preds_train_t)
-    save_to_vtk(path_to_vtk)
-
-    return
+    return df_with_predictions
 
 
 if __name__ == '__main__':
-    image_params = (640, 400, 5)
-    np_data_path = r'./image_pred.npy'
-    vtk_data_path = r'./image_pred'
-    X, y = get_image(image_params)
-    run_reservoir_detection_problem(X, y, np_data_path, vtk_data_path)
+    path_to_segy = r'./Stacks/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
+    train_dir = r'./Test/Train'
+    validation_dir = r'./Test/Validation'
+    test_dir = r'./Test/Test'
+    model_path = 'r./seismic_2.h5'
+    run_reservoir_detection_problem(path_to_segy=path_to_segy,
+                                    train_path=train_dir,
+                                    validation_path=validation_dir,
+                                    test_path=test_dir,
+                                    model_path=model_path)

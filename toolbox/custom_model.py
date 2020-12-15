@@ -6,12 +6,147 @@ import matplotlib.pyplot as plt
 plt.style.use("ggplot")
 
 from keras.models import Model, load_model
-from keras.layers import Input, BatchNormalization, Activation, Dense, Dropout
+from keras.layers import Input, BatchNormalization, Activation, Dropout
 from keras.layers.convolutional import Conv2D, Conv2DTranspose
-from keras.layers.pooling import MaxPooling2D, GlobalMaxPool2D
 from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
+from keras.preprocessing.image import ImageDataGenerator
+from keras import layers
+from keras import models
+from keras import optimizers
+from keras.layers import Conv2D, MaxPooling2D
+
+
+@dataclass
+class SeismicModel:
+    train_path: str
+    validation_path: str
+    test_path: str
+    model_path: str = None
+    image_params: tuple = (150, 150, 3)
+
+    def __init__(self,
+                 train_path=train_path,
+                 validation_path=validation_path,
+                 test_path=test_path,
+                 model_path=model_path):
+
+        self.model_path = model_path
+        self.test_path = test_path
+        self.validation_path = validation_path
+        self.train_path = train_path
+
+        if self.model_path is None:
+            self.model = self.get_model()
+        else:
+            self.model = self.load_model()
+
+        self.train_generator, self.validation_generator, self.test_generator = self._create_data_generators()
+
+    def get_model(self):
+        """Function to define the CNN Model"""
+
+        model = models.Sequential()
+        model.add(layers.Conv2D(32, (3, 3), activation='relu',
+                                input_shape=self.image_params))
+        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.Flatten())
+        model.add(layers.Dense(512, activation='relu'))
+        model.add(layers.Dense(1, activation='sigmoid'))
+
+        model.compile(loss='binary_crossentropy',
+                      optimizer=optimizers.RMSprop(lr=1e-4),
+                      metrics=['acc'])
+
+        return model
+
+    def fit(self,
+            steps_per_epoch: int = 100,
+            epochs: int = 30):
+
+        results = self.model.fit_generator(
+            self.train_generator,
+            steps_per_epoch=steps_per_epoch,
+            epochs=epochs,
+            validation_data=self.validation_generator,
+            validation_steps=50)
+
+        return results
+
+    def predict(self):
+        predictions = self.model.predict_generator(self.test_generator,
+                                                   steps=len(self.test_generator),
+                                                   verbose=1)
+        filenames = self.test_generator.filenames
+
+        return predictions, filenames
+
+    def load_model(self):
+        self.model = load_model(self.model_path)
+        return self.model
+
+    def plot_results(self,
+                     results,
+                     loss_flag: bool = False):
+
+        acc = results.history['acc']
+        val_acc = results.history['val_acc']
+        epochs = range(len(acc))
+        plt.plot(epochs, acc, 'bo', label='Training acc')
+        plt.plot(epochs, val_acc, 'b', label='Validation acc')
+        plt.title('Training and validation accuracy')
+        plt.legend()
+        plt.savefig(r'./accuracy_curve.png', edgecolor='black')
+
+        if loss_flag:
+            loss = results.history['loss']
+            val_loss = results.history['val_loss']
+            plt.plot(epochs, loss, 'bo', label='Training loss')
+            plt.plot(epochs, val_loss, 'b', label='Validation loss')
+            plt.title('Training and validation loss')
+            plt.legend()
+            plt.savefig(r'./loss_curve.png', edgecolor='black')
+
+        return
+
+    def _create_data_generators(self):
+        data_generator = ImageDataGenerator(
+            rescale=1. / 255,
+            rotation_range=40,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            shear_range=0.2,
+            zoom_range=0.2,
+            horizontal_flip=True, )
+
+        train_generator = data_generator.flow_from_directory(
+            self.train_path,
+            target_size=(150, 150),
+            batch_size=32,
+            class_mode='binary',
+            shuffle=True
+        )
+
+        validation_generator = data_generator.flow_from_directory(
+            self.validation_path,
+            target_size=(150, 150),
+            batch_size=32,
+            class_mode='binary',
+            shuffle=True
+        )
+
+        test_generator = data_generator.flow_from_directory(
+            directory=self.test_path,
+            target_size=(150, 150),
+            color_mode="rgb",
+            batch_size=32,
+            class_mode=None,
+            shuffle=False)
+
+        return train_generator, validation_generator, test_generator
 
 
 @dataclass
