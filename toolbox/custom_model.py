@@ -18,24 +18,20 @@ from keras import optimizers
 from keras.layers import Conv2D, MaxPooling2D
 
 
-@dataclass
-class SeismicModel:
-    train_path: str
-    validation_path: str
-    test_path: str
-    model_path: str = None
-    image_params: tuple = (150, 150, 3)
+class SeismicModel(object):
 
     def __init__(self,
-                 train_path=train_path,
-                 validation_path=validation_path,
-                 test_path=test_path,
-                 model_path=model_path):
+                 train_path: str,
+                 validation_path: str,
+                 test_path: str,
+                 model_path: str,
+                 image_params: tuple = (150, 150, 3)):
 
         self.model_path = model_path
         self.test_path = test_path
         self.validation_path = validation_path
         self.train_path = train_path
+        self.image_params = image_params
 
         if self.model_path is None:
             self.model = self.get_model()
