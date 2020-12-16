@@ -1,7 +1,9 @@
+import numpy as np
+import pandas as pd
+
 from toolbox.custom_model import SeismicModel
 from toolbox.preprocessing import create_inversed_cube, create_seismic_cube, create_wavelet, save_seismic_slices
-import pandas as pd
-import numpy as np
+
 
 def run_reservoir_detection_problem(path_to_segy: str,
                                     train_path: str,
