@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -40,6 +42,12 @@ if __name__ == '__main__':
     validation_dir = r'./Test/Validation'
     test_dir = r'./Test/Test'
     model_path = 'r./seismic_2.h5'
+
+    if not os.path.exists(path_to_segy):
+        raise ValueError(
+            'Download full input data (2.6GB) from https://data.mendeley.com/datasets/g2vxy237h5/1 first. '
+            'It is too large to be placed in GitHub.')
+
     run_reservoir_detection_problem(path_to_segy=path_to_segy,
                                     train_path=train_dir,
                                     validation_path=validation_dir,

@@ -6,17 +6,17 @@ from toolbox.preprocessing import augmentation, get_image
 from toolbox.utils import save_to_vtk
 
 
-def run_semantic_segmantation_problem(X: np.ndarray,
+def run_semantic_segmantation_problem(x: np.ndarray,
                                       y: np.ndarray,
                                       path_to_np: str,
                                       path_to_vtk: str):
-    X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, random_state=42)
-    X_train, y_train = augmentation(X_train, y_train)
-    X_valid, y_valid = augmentation(X_valid, y_valid)
+    x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.2, random_state=42)
+    x_train, y_train = augmentation(x_train, y_train)
+    x_valid, y_valid = augmentation(x_valid, y_valid)
 
     model = OilModel()
-    results = model.fit(train_data=(X_train, y_train),
-                        val_data=(X_valid, y_valid),
+    results = model.fit(train_data=(x_train, y_train),
+                        val_data=(x_valid, y_valid),
                         batch_size=32,
                         epochs=50)
 
@@ -30,8 +30,6 @@ def run_semantic_segmantation_problem(X: np.ndarray,
 
     np.save(path_to_np, preds_train_t)
     save_to_vtk(path_to_vtk)
-
-    return
 
 
 if __name__ == '__main__':

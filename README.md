@@ -32,10 +32,10 @@ The basic example of the reservoir detection run is the following:
 ```python
 from seismic_analysis.reservoir_detection_problem import run_reservoir_detection_problem
 
-path_to_segy = r'./Inputs/Stacks/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
-train_dir = r'./Inputs/Images/Train'
-validation_dir = r'./Inputs/Images/Validation'
-test_dir = r'./Inputs/Images/Test'
+path_to_segy = r'./inputs/Stacks/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
+train_dir = r'./inputs/Images/Train'
+validation_dir = r'./inputs/Images/Validation'
+test_dir = r'./inputs/Images/Test'
 model_path = 'r./Outputs/Models/seismic_2.h5'
 run_reservoir_detection_problem(path_to_segy=path_to_segy,
                                 train_path=train_dir,
