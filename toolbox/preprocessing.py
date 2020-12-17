@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,6 +8,9 @@ import segyio
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from skimage.transform import resize
 
+def project_root() -> Path:
+    """Returns project root folder."""
+    return Path(__file__).parent.parent.parent
 
 def create_seismic_cube(segyfile_path: str):
 
@@ -103,7 +107,7 @@ def create_inversed_cube(cube: np.ndarray,
                                                 m0=inversed,
                                                 epsI=1e-4,
                                                 epsR=5e1,
-                                                **dict(iter_lim=20, show=2))
+                                                **dict(iter_lim=5, show=2))
 
     # swap time axis back to last dimension
     cube_small = np.swapaxes(cube_small, 0, -1)
@@ -132,25 +136,29 @@ def save_seismic_slices(inversion_dict: dict,
         axs.get_yaxis().set_visible(False)
         axs.imshow(cube_small[..., i], cmap='seismic', vmin=-4, vmax=4,
                    extent=borders)
-        plt.savefig(r'./image_jpg/' + str(i) + '.png', dpi=300)
+        plt.savefig(r'./Outputs/RAW_IMAGES/' + str(i) + '.png', dpi=300)
 
     return
 
 
 def get_image(image_params: tuple):
-    ids = next(os.walk(r"./inputs/images"))[2]  # list of names all images in the given path
+    ids = next(os.walk(r'./Inputs/LABELED_IMAGES/Train'))[2]  # list of names all images in the given path
     print("No. of images = ", len(ids))
 
     X = np.zeros((len(ids), image_params[0], image_params[1], 1), dtype=np.float32)
     y = np.zeros((len(ids), image_params[0], image_params[1], 1), dtype=np.float32)
 
+    image_path = r'./Inputs/LABELED_IMAGES/Train/'
+    mask_path = r'./Inputs/LABELED_IMAGES/Train/Mask_train/'
+    # image_path = os.path.join(str(project_root()), file_path_train)
+    # mask_path = os.path.join(str(project_root()), file_path_test)
     for n, id_ in enumerate(ids):
         # Load images
-        img = load_img(r"./inputs/images/" + id_, grayscale=True)
+        img = load_img(image_path + id_, color_mode="grayscale")
         x_img = img_to_array(img)
         x_img = resize(x_img, (image_params[0], image_params[1], 1), mode='constant', preserve_range=True)
         # Load masks
-        mask = img_to_array(load_img(r"./mask/" + id_, grayscale=True))
+        mask = img_to_array(load_img(mask_path + id_, color_mode="grayscale"))
         mask = resize(mask, (image_params[0], image_params[1], 1), mode='constant', preserve_range=True)
         # Save images
         X[n] = x_img / 255.0

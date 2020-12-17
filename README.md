@@ -32,11 +32,11 @@ The basic example of the reservoir detection run is the following:
 ```python
 from seismic_analysis.reservoir_detection_problem import run_reservoir_detection_problem
 
-path_to_segy = r'./inputs/Stacks/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
-train_dir = r'./inputs/Images/Train'
-validation_dir = r'./inputs/Images/Validation'
-test_dir = r'./inputs/Images/Test'
-model_path = 'r./Outputs/Models/seismic_2.h5'
+path_to_segy = r'./Inputs/PRESTACK/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
+train_dir = r'./Inputs/LABELED_IMAGES/Train'
+validation_dir = r'./Inputs/LABELED_IMAGES/Validation'
+test_dir = r'./Inputs/LABELED_IMAGES/Test'
+model_path = 'r./Outputs/MODELS/seismic_2.h5'
 run_reservoir_detection_problem(path_to_segy=path_to_segy,
                                 train_path=train_dir,
                                 validation_path=validation_dir,
@@ -50,8 +50,8 @@ from seismic_analysis.semantic_segmentation_problem import run_semantic_segmanta
 from toolbox.preprocessing import get_image
 
 image_params = (640, 400, 5)
-np_data_path = r'./Outputs/Seismic_slice/slice.npy'
-vtk_data_path = r'./Outputs/Seismic_slice/image_pred'
+np_data_path = r'./Outputs/SEISMIC_CUBE/slice.npy'
+vtk_data_path = r'./Outputs/SEISMIC_CUBE/image_pred'
 X, y = get_image(image_params)
 run_semantic_segmantation_problem(X, y, np_data_path, vtk_data_path)
 ```

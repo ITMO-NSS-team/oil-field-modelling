@@ -34,7 +34,7 @@ def run_semantic_segmantation_problem(x: np.ndarray,
 
 if __name__ == '__main__':
     image_params = (640, 400, 5)
-    np_data_path = r'./arrays/image_pred.npy'
-    vtk_data_path = r'./arrays/image_pred'
+    np_data_path = r'./Outputs/SEISMIC_CUBE/slice.npy'
+    vtk_data_path = r'./Outputs/SEISMIC_CUBE/image_pred'
     X, y = get_image(image_params)
     run_semantic_segmantation_problem(X, y, np_data_path, vtk_data_path)

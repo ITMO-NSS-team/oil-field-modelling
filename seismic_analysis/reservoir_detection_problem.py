@@ -25,23 +25,25 @@ def run_reservoir_detection_problem(path_to_segy: str,
                          test_path=test_path,
                          model_path=model_path)
 
-    results = model.fit()
-    model.plot_results(results, loss_flag=True)
+    if not model_path:
+        results = model.fit()
+        model.plot_results(results, loss_flag=True)
 
     predictions, filenames = model.predict()
 
     classes = np.round(predictions)
     df_with_predictions = pd.DataFrame({"file": filenames, "pr": predictions[:, 0], "class": classes[:, 0]})
 
+    print(df_with_predictions)
     return df_with_predictions
 
 
 if __name__ == '__main__':
-    path_to_segy = r'./Stacks/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
-    train_dir = r'./Test/Train'
-    validation_dir = r'./Test/Validation'
-    test_dir = r'./Test/Test'
-    model_path = 'r./seismic_2.h5'
+    path_to_segy = r'./Inputs/PRESTACK/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST_STACK.3D.JS-017534.segy'
+    train_dir = r'./Inputs/LABELED_IMAGES/Train'
+    validation_dir = r'./Inputs/LABELED_IMAGES/Validation'
+    test_dir = r'./Inputs/LABELED_IMAGES/Test'
+    model_path = 'seismic_2.h5'
 
     if not os.path.exists(path_to_segy):
         raise ValueError(

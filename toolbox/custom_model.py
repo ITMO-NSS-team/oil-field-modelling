@@ -73,6 +73,7 @@ class SeismicModel(object):
         return results
 
     def predict(self):
+        self.test_generator.reset()
         predictions = self.model.predict_generator(self.test_generator,
                                                    steps=len(self.test_generator),
                                                    verbose=1)
@@ -89,20 +90,16 @@ class SeismicModel(object):
                      loss_flag: bool = False):
 
         acc = results.history['acc']
-        val_acc = results.history['val_acc']
         epochs = range(len(acc))
         plt.plot(epochs, acc, 'bo', label='Training acc')
-        plt.plot(epochs, val_acc, 'b', label='Validation acc')
-        plt.title('Training and validation accuracy')
+        plt.title('Training accuracy')
         plt.legend()
         plt.savefig(r'./accuracy_curve.png', edgecolor='black')
 
         if loss_flag:
             loss = results.history['loss']
-            val_loss = results.history['val_loss']
             plt.plot(epochs, loss, 'bo', label='Training loss')
-            plt.plot(epochs, val_loss, 'b', label='Validation loss')
-            plt.title('Training and validation loss')
+            plt.title('Training loss')
             plt.legend()
             plt.savefig(r'./loss_curve.png', edgecolor='black')
 
