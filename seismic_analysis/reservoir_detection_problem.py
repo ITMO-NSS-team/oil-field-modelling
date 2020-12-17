@@ -45,6 +45,9 @@ if __name__ == '__main__':
     test_dir = r'./Inputs/LABELED_IMAGES/Test'
     model_path = 'seismic_2.h5'
 
+    if not os.path.exists(r'./Inputs/PRESTACK/'):
+        os.mkdir(r'./Inputs/PRESTACK/')
+
     if not os.path.exists(path_to_segy):
         raise ValueError(
             'Download full input data (2.6GB) from https://data.mendeley.com/datasets/g2vxy237h5/1 first. '
