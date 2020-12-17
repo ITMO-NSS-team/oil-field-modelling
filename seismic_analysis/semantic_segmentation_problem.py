@@ -12,7 +12,6 @@ def run_semantic_segmantation_problem(x: np.ndarray,
                                       path_to_np: str,
                                       path_to_vtk: str,
                                       model_path: str = None):
-
     x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.2, random_state=42)
     x_train, y_train = augmentation(x_train, y_train)
     x_valid, y_valid = augmentation(x_valid, y_valid)
@@ -30,7 +29,7 @@ def run_semantic_segmantation_problem(x: np.ndarray,
         model.plot_learning_curve(results, 'accuracy')
 
     # Predict on whole dataset
-    preds_train = model.predict(X)
+    preds_train = model.predict(x)
     # Threshold predictions
     preds_train_t = (preds_train > 0.5).astype(np.uint8)
 
@@ -42,15 +41,15 @@ if __name__ == '__main__':
     image_params = (640, 400, 1)
     np_data_path = r'./Outputs/SEISMIC_CUBE/slice.npy'
     vtk_data_path = r'./Outputs/SEISMIC_CUBE/3D_VTK'
-    X, y = get_image(image_params)
-    model_path = 'model_oil.h5'
+    x, y = get_image(image_params)
+    pre_fitted_model_path = 'model_oil.h5'
 
-    if X.shape[0] == 1:
+    if x.shape[0] == 1:
         raise ValueError('You must use more then one picture for your training dataset')
 
-    run_semantic_segmantation_problem(X,
+    run_semantic_segmantation_problem(x,
                                       y,
                                       image_params,
                                       np_data_path,
                                       vtk_data_path,
-                                      model_path,)
+                                      pre_fitted_model_path)
