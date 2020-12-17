@@ -15,6 +15,7 @@ def save_to_vtk(path_to_np: str,
         where to save the vtk model, do not include vtk extension, it does automatically
     """
     data = np.load(path_to_np)
+    data = np.squeeze(data)
 
     x = np.arange(data.shape[0] + 1)
     y = np.arange(data.shape[1] + 1)

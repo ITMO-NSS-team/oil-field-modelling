@@ -36,7 +36,7 @@ path_to_segy = r'./Inputs/PRESTACK/ST0202ZDC12-PZ-PSDM-KIRCH-FULL-D.MIG_FIN.POST
 train_dir = r'./Inputs/LABELED_IMAGES/Train'
 validation_dir = r'./Inputs/LABELED_IMAGES/Validation'
 test_dir = r'./Inputs/LABELED_IMAGES/Test'
-model_path = 'r./Outputs/MODELS/seismic_2.h5'
+model_path = 'seismic_2.h5'
 run_reservoir_detection_problem(path_to_segy=path_to_segy,
                                 train_path=train_dir,
                                 validation_path=validation_dir,
@@ -51,7 +51,7 @@ from toolbox.preprocessing import get_image
 
 image_params = (640, 400, 5)
 np_data_path = r'./Outputs/SEISMIC_CUBE/slice.npy'
-vtk_data_path = r'./Outputs/SEISMIC_CUBE/image_pred'
+vtk_data_path = r'./Outputs/SEISMIC_CUBE/3D_VTK'
 X, y = get_image(image_params)
 run_semantic_segmantation_problem(X, y, np_data_path, vtk_data_path)
 ```

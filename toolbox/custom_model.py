@@ -149,7 +149,10 @@ class OilModel:
     kernel_size: str = 3
     model_path: str = None
 
-    def __init__(self):
+    def __init__(self,
+                 image_params: tuple):
+        self.image_params = image_params
+
         if self.model_path is None:
             self.model = self.get_model()
         else:

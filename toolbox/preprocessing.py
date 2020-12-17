@@ -70,19 +70,13 @@ def create_wavelet(cube: np.ndarray,
     #  lenght of fft
     fft_len = 2 ** 11
 
-    # time axis for wavelet
-    wavelet_time_axis = np.arange(wavelet_len) * (grid_step / 1000)
-    wavelet_time_axis = np.concatenate((np.flipud(-wavelet_time_axis[1:]), wavelet_time_axis), axis=0)
-
     # estimate wavelet spectrum
     wavelet_fft = np.mean(np.abs(np.fft.fft(cube[..., 500:], fft_len, axis=-1)), axis=(0, 1))
-    est_fft = np.fft.fftfreq(fft_len, d=grid_step / 1000)
 
     # create wavelet in time
     wavelet_estimated = np.real(np.fft.ifft(wavelet_fft)[:wavelet_len])
     wavelet_estimated = np.concatenate((np.flipud(wavelet_estimated[1:]), wavelet_estimated), axis=0)
     wavelet_estimated = wavelet_estimated / wavelet_estimated.max()
-    center_point = np.argmax(np.abs(wavelet_estimated))
 
     return wavelet_estimated
 
@@ -142,16 +136,14 @@ def save_seismic_slices(inversion_dict: dict,
 
 
 def get_image(image_params: tuple):
-    ids = next(os.walk(r'./Inputs/LABELED_IMAGES/Train'))[2]  # list of names all images in the given path
+    ids = next(os.walk(r'./Inputs/LABELED_IMAGES/Train/images'))[2]  # list of names all images in the given path
     print("No. of images = ", len(ids))
 
     X = np.zeros((len(ids), image_params[0], image_params[1], 1), dtype=np.float32)
     y = np.zeros((len(ids), image_params[0], image_params[1], 1), dtype=np.float32)
 
-    image_path = r'./Inputs/LABELED_IMAGES/Train/'
-    mask_path = r'./Inputs/LABELED_IMAGES/Train/Mask_train/'
-    # image_path = os.path.join(str(project_root()), file_path_train)
-    # mask_path = os.path.join(str(project_root()), file_path_test)
+    image_path = r'./Inputs/LABELED_IMAGES/Train/images/'
+    mask_path = r'./Inputs/LABELED_IMAGES/Mask_train/'
     for n, id_ in enumerate(ids):
         # Load images
         img = load_img(image_path + id_, color_mode="grayscale")
@@ -164,7 +156,7 @@ def get_image(image_params: tuple):
         X[n] = x_img / 255.0
         y[n] = mask / 255.0
 
-    return
+    return X, y
 
 
 def augmentation(X: np.ndarray,
