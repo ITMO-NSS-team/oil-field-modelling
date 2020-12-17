@@ -150,12 +150,14 @@ class OilModel:
     model_path: str = None
 
     def __init__(self,
-                 image_params: tuple):
+                 image_params: tuple,
+                 model_path: str):
         self.image_params = image_params
 
         if self.model_path is None:
             self.model = self.get_model()
         else:
+            self.model_path = model_path
             self.model = self.load_model()
 
     def _conv2d_block(self, input_tensor, n_filters, kernel_size, batchnorm=True):

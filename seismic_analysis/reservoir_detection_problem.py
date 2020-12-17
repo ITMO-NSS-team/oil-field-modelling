@@ -11,7 +11,7 @@ def run_reservoir_detection_problem(path_to_segy: str,
                                     train_path: str,
                                     validation_path: str,
                                     test_path: str,
-                                    model_path: str):
+                                    model_path: str = None):
     origin_cube, borders, grid_step = create_seismic_cube(segyfile_path=path_to_segy)
     wavelet = create_wavelet(cube=origin_cube,
                              grid_step=grid_step)
@@ -25,7 +25,7 @@ def run_reservoir_detection_problem(path_to_segy: str,
                          test_path=test_path,
                          model_path=model_path)
 
-    if not model_path:
+    if model_path is None:
         results = model.fit()
         model.plot_results(results, loss_flag=True)
 
