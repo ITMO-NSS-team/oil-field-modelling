@@ -8,6 +8,7 @@ import segyio
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from skimage.transform import resize
 
+
 def project_root() -> Path:
     """Returns project root folder."""
     return Path(__file__).parent.parent.parent
@@ -135,15 +136,15 @@ def save_seismic_slices(inversion_dict: dict,
     return
 
 
-def get_image(image_params: tuple):
-    ids = next(os.walk(r'./Inputs/LABELED_IMAGES/Train/images'))[2]  # list of names all images in the given path
+def get_image(image_params: tuple, path='.'):
+    ids = next(os.walk(f'{path}/Inputs/LABELED_IMAGES/Train/images'))[2]  # list of names all images in the given path
     print("No. of images = ", len(ids))
 
     X = np.zeros((len(ids), image_params[0], image_params[1], 1), dtype=np.float32)
     y = np.zeros((len(ids), image_params[0], image_params[1], 1), dtype=np.float32)
 
-    image_path = r'./Inputs/LABELED_IMAGES/Train/images/'
-    mask_path = r'./Inputs/LABELED_IMAGES/Mask_train/'
+    image_path = f'{path}/Inputs/LABELED_IMAGES/Train/images/'
+    mask_path = f'{path}/Inputs/LABELED_IMAGES/Mask_train/'
     for n, id_ in enumerate(ids):
         # Load images
         img = load_img(image_path + id_, color_mode="grayscale")

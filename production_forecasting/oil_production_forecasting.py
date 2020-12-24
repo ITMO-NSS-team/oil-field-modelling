@@ -1,3 +1,4 @@
+import datetime
 import os
 from copy import copy
 from pathlib import Path
@@ -25,7 +26,8 @@ def run_oil_forecasting(train_file_path,
                         train_file_path_crm,
                         forecast_length=25, max_window_size=50,
                         is_visualise=False,
-                        well_id='Unknown'):
+                        well_id='Unknown',
+                        max_time=datetime.timedelta(minutes=10)):
     """
     :param train_file_path: path to the historical well input_data
     :param train_file_path_crm: path to the CRM forecasts
@@ -42,18 +44,18 @@ def run_oil_forecasting(train_file_path,
                                              return_all_steps=False,
                                              make_future_prediction=False))
 
-    full_path_train = os.path.join(str(project_root()), train_file_path)
+    full_path_train = train_file_path
     dataset_to_train = InputData.from_csv(
         full_path_train, task=task_to_solve, data_type=DataTypesEnum.ts,
         delimiter=',')
 
     # a dataset for a final validation of the composed model
-    full_path_test = os.path.join(str(project_root()), train_file_path)
+    full_path_test = train_file_path
     dataset_to_validate = InputData.from_csv(
         full_path_test, task=task_to_solve, data_type=DataTypesEnum.ts,
         delimiter=',')
 
-    full_path_train_crm = os.path.join(str(project_root()), train_file_path_crm)
+    full_path_train_crm = train_file_path_crm
     dataset_to_train_crm = InputData.from_csv(
         full_path_train_crm, task=task_to_solve, data_type=DataTypesEnum.ts,
         delimiter=',')
@@ -79,7 +81,8 @@ def run_oil_forecasting(train_file_path,
 
         chain_simple = TsForecastingChain(PrimaryNode('rfr'))
         chain_simple_crm = TsForecastingChain(PrimaryNode('rfr'))
-        chain_crm_opt = get_comp_chain(f'{well_id}_{forecasting_step}', dataset_to_train_local_crm)
+        chain_crm_opt = get_comp_chain(f'{well_id}_{forecasting_step}', dataset_to_train_local_crm,
+                                       max_time)
 
         chain_simple.fit_from_scratch(input_data=dataset_to_train_local, verbose=False)
         chain_simple_crm.fit_from_scratch(input_data=dataset_to_train_local_crm, verbose=False)

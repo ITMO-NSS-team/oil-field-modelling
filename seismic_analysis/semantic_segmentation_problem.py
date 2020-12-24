@@ -47,9 +47,7 @@ if __name__ == '__main__':
     if x.shape[0] == 1:
         raise ValueError('You must use more then one picture for your training dataset')
 
-    run_semantic_segmantation_problem(x,
-                                      y,
+    run_semantic_segmantation_problem(x, y,
                                       image_params,
-                                      np_data_path,
-                                      vtk_data_path,
+                                      np_data_path, vtk_data_path,
                                       pre_fitted_model_path)
