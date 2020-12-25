@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.com/ITMO-NSS-team/oil-field-modelling.svg?branch=master)](https://travis-ci.com/ITMO-NSS-team/oil-field-modelling)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
+
 # The toolbox for the oil fields modeling
 
 This repository contains the toolbox for the oil field modeling and analysis (oil forecasting, seismic slices classification, etc). The Volve field is used as a case study.
