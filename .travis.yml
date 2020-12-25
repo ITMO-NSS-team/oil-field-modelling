@@ -1,7 +1,6 @@
 language: python
 
 python:
-  - "3.7"
   - "3.8"
 
 install:
@@ -10,4 +9,4 @@ notifications:
   email: false
 
 script:
-  - coverage run --source=. -m py.test -s
+      - pytest -s
