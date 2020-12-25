@@ -7,25 +7,34 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from dtw import dtw
-from fedot.core.composer.chain import Chain
-from fedot.core.composer.gp_composer.fixed_structure_composer import FixedStructureComposerBuilder
+from fedot.core.chains.chain import Chain
+from fedot.core.composer.gp_composer.fixed_structure_composer \
+    import FixedStructureComposerBuilder
 from fedot.core.composer.gp_composer.gp_composer import GPComposerRequirements
-from fedot.core.composer.node import PrimaryNode, SecondaryNode
-from fedot.core.composer.ts_chain import TsForecastingChain
-from fedot.core.models.data import InputData, OutputData
-from fedot.core.models.preprocessing import EmptyStrategy
-from fedot.core.repository.quality_metrics_repository import MetricsRepository, RegressionMetricsEnum
+from fedot.core.chains.node import PrimaryNode, SecondaryNode
+from fedot.core.chains.ts_chain import TsForecastingChain
+from fedot.core.data.data import InputData, OutputData
+from fedot.core.data.preprocessing import EmptyStrategy
+from fedot.core.repository.quality_metrics_repository import MetricsRepository, \
+    RegressionMetricsEnum
 from fedot.utilities.synthetic.chain_template_new import ChainTemplate
 from sklearn.metrics import mean_squared_error as mse
 
 
-def get_comp_chain(exp_id: str, data: InputData):
+def project_root():
+    """Returns project root folder."""
+    return f'{Path(__file__).parent.parent}/production_forecasting/'
+
+
+def get_comp_chain(exp_id: str, data: InputData,
+                   max_time=datetime.timedelta(minutes=10)):
     """ Generate the model using evolutionary composer
     :param exp_id: id of the experiment
     :param data: dataset of the building of composite model
+    :param max_time: maximal optimisation time
     :return: the model with optimal structure
     """
-    if os.path.exists(f'{id}.json'):
+    if os.path.exists(f'{exp_id}.json'):
         chain = Chain()
         chain_template = ChainTemplate(chain)
         chain_template.import_from_json(f'{exp_id}.json')
@@ -46,7 +55,7 @@ def get_comp_chain(exp_id: str, data: InputData):
         secondary=available_model_types, max_arity=2,
         max_depth=1, pop_size=10, num_of_generations=10,
         crossover_prob=0, mutation_prob=0.8,
-        max_lead_time=datetime.timedelta(minutes=10))
+        max_lead_time=max_time)
 
     metric_function = MetricsRepository().metric_by_id(RegressionMetricsEnum.RMSE)
 
@@ -60,12 +69,13 @@ def get_comp_chain(exp_id: str, data: InputData):
     ts_chain = TsForecastingChain(chain.root_node)
 
     print([str(_) for _ in ts_chain.nodes])
+
     ts_chain.save_chain(f'{exp_id}.json')
     return ts_chain
 
 
 def get_crm_prediction_with_intervals(well_name):
-    file_path_crm = f'input_data/crmip.csv'
+    file_path_crm = f'./input_data/crmip.csv'
     file_path_crm = os.path.join(str(project_root()), file_path_crm)
 
     data_frame = pd.read_csv(file_path_crm, sep=',')
@@ -110,7 +120,7 @@ def calculate_validation_metric(pred: OutputData, pred_crm, pred_crm_opt, valid:
 
 
 def get_crm_intervals(model_name):
-    file_path_crm = f'input_data/crmip.csv'
+    file_path_crm = f'./input_data/crmip.csv'
     file_path_crm = os.path.join(str(project_root()), file_path_crm)
 
     data_frame = pd.read_csv(file_path_crm, sep=',')
