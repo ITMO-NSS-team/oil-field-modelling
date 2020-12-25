@@ -4,9 +4,9 @@ from copy import copy
 from pathlib import Path
 
 import pandas as pd
-from fedot.core.composer.node import PrimaryNode
-from fedot.core.composer.ts_chain import TsForecastingChain
-from fedot.core.models.data import InputData
+from fedot.core.chains.node import PrimaryNode
+from fedot.core.chains.ts_chain import TsForecastingChain
+from fedot.core.data.data import InputData
 from fedot.core.repository.dataset_types import DataTypesEnum
 from fedot.core.repository.tasks import Task, TaskTypesEnum, TsForecastingParams
 

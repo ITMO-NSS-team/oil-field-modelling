@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from dtw import dtw
-from fedot.core.composer.chain import Chain
+from fedot.core.chains.chain import Chain
 from fedot.core.composer.gp_composer.fixed_structure_composer \
     import FixedStructureComposerBuilder
 from fedot.core.composer.gp_composer.gp_composer import GPComposerRequirements
-from fedot.core.composer.node import PrimaryNode, SecondaryNode
-from fedot.core.composer.ts_chain import TsForecastingChain
-from fedot.core.models.data import InputData, OutputData
-from fedot.core.models.preprocessing import EmptyStrategy
+from fedot.core.chains.node import PrimaryNode, SecondaryNode
+from fedot.core.chains.ts_chain import TsForecastingChain
+from fedot.core.data.data import InputData, OutputData
+from fedot.core.data.preprocessing import EmptyStrategy
 from fedot.core.repository.quality_metrics_repository import MetricsRepository, \
     RegressionMetricsEnum
 from fedot.utilities.synthetic.chain_template_new import ChainTemplate
