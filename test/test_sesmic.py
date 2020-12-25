@@ -15,10 +15,13 @@ def _clean():
 def test_reservoir_segmentation():
     _clean()
 
+    test_file_path = str(os.path.dirname(__file__))
+    file_path_images = os.path.join(test_file_path, 'test_data/seismic')
+
     image_params = (640, 400, 1)
     np_data_path = r'./slice.npy'
     vtk_data_path = r'./3D_VTK'
-    x, y = get_image(image_params, f'{__file__}/../test_data/seismic/')
+    x, y = get_image(image_params, file_path_images)
     pre_fitted_model_path = 'model_oil.h5'
 
     run_semantic_segmantation_problem(x, y,
