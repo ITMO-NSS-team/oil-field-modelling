@@ -48,6 +48,7 @@ def run_oil_forecasting(train_file_path,
     dataset_to_train = InputData.from_csv(
         full_path_train, task=task_to_solve, data_type=DataTypesEnum.ts,
         delimiter=',')
+    dataset_to_train.task.task_params.return_all_steps = True
 
     # a dataset for a final validation of the composed model
     full_path_test = train_file_path
@@ -59,6 +60,7 @@ def run_oil_forecasting(train_file_path,
     dataset_to_train_crm = InputData.from_csv(
         full_path_train_crm, task=task_to_solve, data_type=DataTypesEnum.ts,
         delimiter=',')
+    dataset_to_train_crm.task.task_params.return_all_steps = True
 
     dataset_to_validate_crm = copy(dataset_to_train_crm)
 
