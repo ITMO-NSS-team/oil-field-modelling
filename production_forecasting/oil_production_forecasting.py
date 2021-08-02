@@ -4,13 +4,14 @@ from copy import copy
 from pathlib import Path
 
 import pandas as pd
-from fedot.core.chains.node import PrimaryNode
-from fedot.core.chains.ts_chain import TsForecastingChain
 from fedot.core.data.data import InputData
+from fedot.core.pipelines.node import PrimaryNode
+from fedot.core.pipelines.pipeline import Pipeline
+from fedot.core.pipelines.ts_wrappers import out_of_sample_ts_forecast
 from fedot.core.repository.dataset_types import DataTypesEnum
 from fedot.core.repository.tasks import Task, TaskTypesEnum, TsForecastingParams
 
-from toolbox.forecasting_utils import calculate_validation_metric, get_comp_chain, merge_datasets
+from toolbox.forecasting_utils import calculate_validation_metric, get_comp_pipeline, merge_datasets
 
 forecast_window_shift_num = 4
 
@@ -39,16 +40,12 @@ def run_oil_forecasting(train_file_path,
     """
     # specify the task to solve
     task_to_solve = Task(TaskTypesEnum.ts_forecasting,
-                         TsForecastingParams(forecast_length=forecast_length,
-                                             max_window_size=max_window_size,
-                                             return_all_steps=False,
-                                             make_future_prediction=False))
+                         TsForecastingParams(forecast_length=forecast_length))
 
     full_path_train = train_file_path
     dataset_to_train = InputData.from_csv(
         full_path_train, task=task_to_solve, data_type=DataTypesEnum.ts,
         delimiter=',')
-    dataset_to_train.task.task_params.return_all_steps = True
 
     # a dataset for a final validation of the composed model
     full_path_test = train_file_path
@@ -60,7 +57,6 @@ def run_oil_forecasting(train_file_path,
     dataset_to_train_crm = InputData.from_csv(
         full_path_train_crm, task=task_to_solve, data_type=DataTypesEnum.ts,
         delimiter=',')
-    dataset_to_train_crm.task.task_params.return_all_steps = True
 
     dataset_to_validate_crm = copy(dataset_to_train_crm)
 
@@ -81,18 +77,21 @@ def run_oil_forecasting(train_file_path,
         dataset_to_validate_local = dataset_to_validate.subset(start + depth, end + depth)
         dataset_to_validate_local_crm = dataset_to_validate_crm.subset(start + depth, end + depth)
 
-        chain_simple = TsForecastingChain(PrimaryNode('rfr'))
-        chain_simple_crm = TsForecastingChain(PrimaryNode('rfr'))
-        chain_crm_opt = get_comp_chain(f'{well_id}_{forecasting_step}', dataset_to_train_local_crm,
-                                       max_time)
+        pipeline_simple = Pipeline(PrimaryNode('rfr'))
+        pipeline_simple_crm = Pipeline(PrimaryNode('rfr'))
+        pipeline_crm_opt = get_comp_pipeline(f'{well_id}_{forecasting_step}', dataset_to_train_local_crm,
+                                             max_time)
 
-        chain_simple.fit_from_scratch(input_data=dataset_to_train_local, verbose=False)
-        chain_simple_crm.fit_from_scratch(input_data=dataset_to_train_local_crm, verbose=False)
-        chain_crm_opt.fit_from_scratch(input_data=dataset_to_train_local_crm, verbose=False)
+        pipeline_simple.fit_from_scratch(input_data=dataset_to_train_local)
+        pipeline_simple_crm.fit_from_scratch(input_data=dataset_to_train_local_crm)
+        pipeline_crm_opt.fit_from_scratch(input_data=dataset_to_train_local_crm)
 
-        prediction = chain_simple.forecast(dataset_to_train_local, dataset_to_validate_local)
-        prediction_crm = chain_simple_crm.forecast(dataset_to_train_local_crm, dataset_to_validate_local_crm)
-        prediction_crm_opt = chain_crm_opt.forecast(dataset_to_train_local_crm, dataset_to_validate_local_crm)
+        prediction = out_of_sample_ts_forecast(pipeline_simple, dataset_to_validate_local,
+                                               horizon=forecast_length)
+        prediction_crm = out_of_sample_ts_forecast(pipeline_simple_crm, dataset_to_validate_local_crm,
+                                                   horizon=forecast_length)
+        prediction_crm_opt = out_of_sample_ts_forecast(dataset_to_train_local_crm, dataset_to_validate_local_crm,
+                                                       horizon=forecast_length)
 
         prediction_full = merge_datasets(prediction_full, prediction, forecasting_step)
         prediction_full_crm = merge_datasets(prediction_full_crm, prediction_crm, forecasting_step)

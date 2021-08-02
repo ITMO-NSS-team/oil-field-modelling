@@ -7,17 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from dtw import dtw
-from fedot.core.chains.chain import Chain
-from fedot.core.chains.node import PrimaryNode, SecondaryNode
-from fedot.core.chains.ts_chain import TsForecastingChain
 from fedot.core.composer.gp_composer.fixed_structure_composer \
     import FixedStructureComposerBuilder
 from fedot.core.composer.gp_composer.gp_composer import GPComposerRequirements
 from fedot.core.data.data import InputData, OutputData
-from fedot.core.data.preprocessing import EmptyStrategy
+from fedot.core.pipelines.node import PrimaryNode, SecondaryNode
+from fedot.core.pipelines.pipeline import Pipeline
 from fedot.core.repository.quality_metrics_repository import MetricsRepository, \
     RegressionMetricsEnum
-from fedot.utilities.synthetic.chain_template_new import ChainTemplate
 from sklearn.metrics import mean_squared_error as mse
 
 
@@ -26,27 +23,26 @@ def project_root():
     return f'{Path(__file__).parent.parent}/production_forecasting/'
 
 
-def get_comp_chain(exp_id: str, data: InputData,
-                   max_time=datetime.timedelta(minutes=10)):
+def get_comp_pipeline(exp_id: str, data: InputData,
+                      max_time=datetime.timedelta(minutes=10)):
     """ Generate the model using evolutionary composer
     :param exp_id: id of the experiment
     :param data: dataset of the building of composite model
     :param max_time: maximal optimisation time
     :return: the model with optimal structure
     """
+    return Pipeline(PrimaryNode('rfr'))
     if os.path.exists(f'{exp_id}.json'):
-        chain = Chain()
-        chain_template = ChainTemplate(chain)
-        chain_template.import_from_json(f'{exp_id}.json')
-        return TsForecastingChain(chain.root_node)
+        pipeline = Pipeline()
+        pipeline.load(f'{exp_id}.json')
+        return pipeline
 
     node_first = PrimaryNode('dtreg')
     node_second = PrimaryNode('rfr')
 
     node_final = SecondaryNode('linear',
-                               nodes_from=[node_first, node_second],
-                               manual_preprocessing_func=EmptyStrategy)
-    chain = TsForecastingChain(node_final)
+                               nodes_from=[node_first, node_second])
+    pipeline = Pipeline(node_final)
 
     available_model_types = ['rfr', 'linear', 'ridge', 'lasso', 'dtreg', 'knnreg']
 
@@ -55,23 +51,23 @@ def get_comp_chain(exp_id: str, data: InputData,
         secondary=available_model_types, max_arity=2,
         max_depth=1, pop_size=10, num_of_generations=10,
         crossover_prob=0, mutation_prob=0.8,
-        max_lead_time=max_time)
+        timeout=max_time)
 
     metric_function = MetricsRepository().metric_by_id(RegressionMetricsEnum.RMSE)
 
     builder = FixedStructureComposerBuilder(task=data.task).with_requirements(composer_requirements).with_metrics(
-        metric_function).with_initial_chain(chain)
+        metric_function).with_initial_pipeline(pipeline)
     composer = builder.build()
 
-    chain = composer.compose_chain(data=data,
-                                   is_visualise=False)
+    pipeline = composer.compose_pipeline(data=data,
+                                         is_visualise=False)
 
-    ts_chain = TsForecastingChain(chain.root_node)
+    ts_pipeline = Pipeline(pipeline.root_node)
 
-    print([str(_) for _ in ts_chain.nodes])
+    print([str(_) for _ in ts_pipeline.nodes])
 
-    ts_chain.save_chain(f'{exp_id}.json')
-    return ts_chain
+    ts_pipeline.save(f'{exp_id}.json')
+    return ts_pipeline
 
 
 def get_crm_prediction_with_intervals(well_name):
