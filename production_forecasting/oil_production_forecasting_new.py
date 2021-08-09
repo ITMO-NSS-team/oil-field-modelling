@@ -10,6 +10,7 @@ from fedot.core.data.data import InputData
 from fedot.core.data.multi_modal import MultiModalData
 from fedot.core.pipelines.node import PrimaryNode, SecondaryNode
 from fedot.core.pipelines.pipeline import Pipeline
+from fedot.core.pipelines.ts_wrappers import in_sample_ts_forecast
 from fedot.core.repository.tasks import TsForecastingParams
 from matplotlib import pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -67,27 +68,35 @@ def run_oil_forecasting(path_to_file, len_forecast,
 
     input_data_fit = {}
     input_data_predict = {}
-    target_train = np.asarray(df[f'prod_X{well_id}'][:-len_forecast])
+    len_forecast_for_split = 4 * len_forecast
+    target_train = np.asarray(df[f'prod_X{well_id}'][:-len_forecast_for_split])
+    dates = []
     for var_name in var_names:
         if var_name == 'DATEPRD':
+            dates = list(df[var_name])
             continue
         time_series = np.asarray(df[var_name])
         # Let's divide our data on train and test samples
-        train_data = time_series[:-len_forecast]
-        test_data = time_series[-len_forecast:]
+        train_data = time_series[:(len(time_series) - len_forecast_for_split)]
+        test_data = time_series[:len_forecast_for_split]
         # Source time series
         train_input, predict_input, task = prepare_input_data(len_forecast=len_forecast,
                                                               train_data_features=train_data,
                                                               train_data_target=target_train,
-                                                              test_data_features=train_data)
+                                                              test_data_features=test_data)
+        train_input.task.task_params.forecast_length = len_forecast
+        predict_input.task.task_params.forecast_length = len_forecast
+        task.task_params.forecast_length = len_forecast
 
         input_data_fit[var_name] = train_input
         input_data_predict[var_name] = predict_input
 
     parent_nodes = []
     for name in input_data_fit.keys():
-        parent_nodes.append(SecondaryNode('lagged',
-                                          nodes_from=[PrimaryNode(f'data_source_ts/{name}')]))
+        parent_nodes.append(SecondaryNode('ridge',
+                                          nodes_from=[SecondaryNode('lagged',
+                                                                    nodes_from=[
+                                                                        PrimaryNode(f'data_source_ts/{name}')])]))
     predefined = Pipeline(SecondaryNode('ridge', nodes_from=parent_nodes))
 
     task_parameters = TsForecastingParams(forecast_length=len_forecast)
@@ -95,10 +104,13 @@ def run_oil_forecasting(path_to_file, len_forecast,
     model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=1.0)
 
     # run AutoML model design in the same way
-    pipeline = model.fit(features=input_data_fit, target=target_train, predefined_model=predefined)
-    forecast = model.predict(features=input_data_predict)
+    pipeline = model.fit(features=input_data_fit, target=target_train)  # , predefined_model=predefined)
 
-    # predicted = make_forecast(pipeline, train_input, predict_input, train_input_exog, predict_input_exog)
+    sources = dict((f'data_source_ts/{data_part_key}', data_part)
+                   for (data_part_key, data_part) in input_data_predict.items())
+    input_data_predict_mm = MultiModalData(sources)
+
+    forecast = in_sample_ts_forecast(pipeline, input_data_predict_mm, horizon=400)
 
     predicted = np.ravel(np.array(forecast))
     test_data = np.ravel(test_data)
@@ -112,10 +124,22 @@ def run_oil_forecasting(path_to_file, len_forecast,
     print(f'MAE - {mae_before:.4f}\n')
 
     if with_visualisation:
-        plt.plot(range(0, len(time_series)), time_series, label='Actual time series')
-        plt.plot(range(len(train_data), len(time_series)), predicted, label='Forecast')
+        x = range(0, len(time_series))
+        x_for = range(len(train_data), len(time_series))
+        plt.plot(x, time_series, label='Actual time series')
+        plt.plot(x_for, predicted, label='Forecast')
+        # plt.xticks(x, dates, rotation=45)
+
+        # n = 25
+        # ax = plt.gca()
+        # [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % n != 0]
+
+        plt.xlabel('Days from 2013.06.01')
+        plt.ylabel('Oil volume, m3')
         plt.legend()
-        plt.grid()
+        # plt.grid()
+        plt.title(well_id)
+        plt.tight_layout()
         plt.show()
 
 
@@ -128,6 +152,6 @@ if __name__ == '__main__':
         full_path_train = os.path.join(str(project_root()), file_path_train)
 
         run_oil_forecasting(path_to_file=full_path_train,
-                            len_forecast=25,
+                            len_forecast=100,
                             with_visualisation=True,
                             well_id=well)
