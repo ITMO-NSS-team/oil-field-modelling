@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from examples.ts_forecasting_tuning import prepare_input_data
+from examples.time_series.ts_forecasting_tuning import prepare_input_data
 from fedot.api.main import Fedot
 from fedot.core.data.data import InputData
 from fedot.core.data.multi_modal import MultiModalData
@@ -105,7 +105,7 @@ def run_oil_forecasting(path_to_file, len_forecast,
 
     # run AutoML model design in the same way
     pipeline = model.fit(features=input_data_fit, target=target_train)  # , predefined_model=predefined)
-
+    pipeline.save(f'pipeline_{well_id}')
     sources = dict((f'data_source_ts/{data_part_key}', data_part)
                    for (data_part_key, data_part) in input_data_predict.items())
     input_data_predict_mm = MultiModalData(sources)
@@ -134,6 +134,10 @@ def run_oil_forecasting(path_to_file, len_forecast,
         # ax = plt.gca()
         # [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % n != 0]
 
+        int_bot = predicted - np.std(predicted) * 0.95
+        int_top = predicted + np.std(predicted) * 0.95
+        plt.plot(x_for, int_bot)
+        plt.plot(x_for, int_top)
         plt.xlabel('Days from 2013.06.01')
         plt.ylabel('Oil volume, m3')
         plt.legend()
