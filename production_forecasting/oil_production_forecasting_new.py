@@ -14,6 +14,7 @@ from fedot.core.pipelines.ts_wrappers import in_sample_ts_forecast
 from fedot.core.repository.tasks import TsForecastingParams
 from matplotlib import pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from scipy.stats import t as student
 
 from production_forecasting.oil_production_forecasting import project_root
 
@@ -61,6 +62,11 @@ def make_forecast(pipeline, train: InputData, predict: InputData,
     return predicted_values
 
 
+def t_conf_interval(std, percentile, n):
+    quantile = student.ppf(percentile, n)
+    return std * quantile / np.sqrt(n)
+
+
 def run_oil_forecasting(path_to_file, len_forecast,
                         with_visualisation, well_id) -> None:
     df = pd.read_csv(path_to_file)
@@ -91,21 +97,17 @@ def run_oil_forecasting(path_to_file, len_forecast,
         input_data_fit[var_name] = train_input
         input_data_predict[var_name] = predict_input
 
-    parent_nodes = []
-    for name in input_data_fit.keys():
-        parent_nodes.append(SecondaryNode('ridge',
-                                          nodes_from=[SecondaryNode('lagged',
-                                                                    nodes_from=[
-                                                                        PrimaryNode(f'data_source_ts/{name}')])]))
-    predefined = Pipeline(SecondaryNode('ridge', nodes_from=parent_nodes))
-
     task_parameters = TsForecastingParams(forecast_length=len_forecast)
 
-    model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=1.0)
+    if not os.path.exists(f'pipeline_{well_id}/pipeline_{well_id}.json'):
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=10)
 
-    # run AutoML model design in the same way
-    pipeline = model.fit(features=input_data_fit, target=target_train)  # , predefined_model=predefined)
-    pipeline.save(f'pipeline_{well_id}')
+        # run AutoML model design in the same way
+        pipeline = model.fit(features=input_data_fit, target=target_train)
+        pipeline.save(f'pipeline_{well_id}', datetime_in_path=False)
+    else:
+        pipeline = Pipeline()
+        pipeline.load(f'pipeline_{well_id}/pipeline_{well_id}.json')
     sources = dict((f'data_source_ts/{data_part_key}', data_part)
                    for (data_part_key, data_part) in input_data_predict.items())
     input_data_predict_mm = MultiModalData(sources)
@@ -126,18 +128,12 @@ def run_oil_forecasting(path_to_file, len_forecast,
     if with_visualisation:
         x = range(0, len(time_series))
         x_for = range(len(train_data), len(time_series))
-        plt.plot(x, time_series, label='Actual time series')
-        plt.plot(x_for, predicted, label='Forecast')
-        # plt.xticks(x, dates, rotation=45)
+        plt.plot(x, time_series, label='Actual time series', linewidth=0.5)
+        plt.plot(x_for, predicted, label='Forecast', linewidth=0.5)
 
-        # n = 25
-        # ax = plt.gca()
-        # [l.set_visible(False) for (i, l) in enumerate(ax.xaxis.get_ticklabels()) if i % n != 0]
-
-        int_bot = predicted - np.std(predicted) * 0.95
-        int_top = predicted + np.std(predicted) * 0.95
-        plt.plot(x_for, int_bot)
-        plt.plot(x_for, int_top)
+        ci = t_conf_interval(np.std(predicted), 0.975, len(predicted)) * 1.96
+        plt.fill_between(x_for, (predicted-ci), (predicted+ci),
+                         color='orange', alpha=.5)
         plt.xlabel('Days from 2013.06.01')
         plt.ylabel('Oil volume, m3')
         plt.legend()
