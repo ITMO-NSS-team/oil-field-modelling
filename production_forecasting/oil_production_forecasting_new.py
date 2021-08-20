@@ -67,7 +67,7 @@ def t_conf_interval(std, percentile, n):
     return std * quantile / np.sqrt(n)
 
 
-def run_oil_forecasting(path_to_file, len_forecast,
+def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast,
                         with_visualisation, well_id) -> None:
     df = pd.read_csv(path_to_file)
     var_names = df.columns
@@ -152,6 +152,7 @@ if __name__ == '__main__':
         full_path_train = os.path.join(str(project_root()), file_path_train)
 
         run_oil_forecasting(path_to_file=full_path_train,
+                            path_to_file_crm=full_path_train_crm,
                             len_forecast=100,
                             with_visualisation=True,
                             well_id=well)
