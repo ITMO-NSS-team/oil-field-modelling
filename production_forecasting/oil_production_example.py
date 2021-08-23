@@ -6,14 +6,11 @@ import numpy as np
 import pandas as pd
 from examples.time_series.ts_forecasting_tuning import prepare_input_data
 from fedot.api.api_utils import _create_multidata_pipeline, array_to_input_data
-from fedot.api.main import Fedot, _extract_features_from_data_part, _get_source_type
+from fedot.api.main import _extract_features_from_data_part, _get_source_type
 from fedot.core.data.multi_modal import MultiModalData
 from fedot.core.pipelines.pipeline import Pipeline
-from fedot.core.pipelines.ts_wrappers import out_of_sample_ts_forecast
 from fedot.core.repository.tasks import TsForecastingParams
-from matplotlib import pyplot as plt
 from scipy.stats import t as student
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from production_forecasting.oil_production_forecasting import project_root
 
@@ -72,7 +69,7 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
     train_data, time_series = prepare_dataset(df_crm, len_forecast, len_forecast_for_split, well_id)
 
     task_parameters = TsForecastingParams(forecast_length=len_forecast)
-
+    train_data.task.task_params = task_parameters
     ###############
     data_part_transformation_func = partial(array_to_input_data,
                                             target_array=train_data.target, task=train_data.task)
@@ -85,92 +82,6 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
     data = MultiModalData(sources)
     pp = Pipeline(_create_multidata_pipeline(train_data.task, train_data, has_categorical_features=False))
     pp.fit(data)
-    ##########
-
-    if not os.path.exists(f'pipeline_{well_id}/pipeline_{well_id}.json'):
-        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=1,
-                      verbose_level=4)
-
-        # run AutoML model design in the same way
-        pipeline = model.fit(features=input_data_fit, target=target_train)
-        pipeline.save(f'pipeline_{well_id}', datetime_in_path=False)
-    else:
-        pipeline = Pipeline()
-        pipeline.load(f'pipeline_{well_id}/pipeline_{well_id}.json')
-
-    if not os.path.exists(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json'):
-        model = Fedot(problem='ts_forecasting', task_params=task_parameters, verbose_level=4)
-
-        # run AutoML model design in the same way
-        pipeline_crm = model.fit(features=input_data_fit_crm, target=target_train_crm)
-        pipeline_crm.save(f'pipeline_crm_{well_id}', datetime_in_path=False)
-    else:
-        pipeline_crm = Pipeline()
-        pipeline_crm.load(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json')
-
-    sources = dict((f'data_source_ts/{data_part_key}', data_part)
-                   for (data_part_key, data_part) in input_data_predict.items())
-    input_data_predict_mm = MultiModalData(sources)
-
-    sources_crm = dict((f'data_source_ts/{data_part_key}', data_part)
-                       for (data_part_key, data_part) in input_data_predict_crm.items())
-    input_data_predict_mm_crm = MultiModalData(sources_crm)
-
-    forecast = out_of_sample_ts_forecast(pipeline, input_data_predict_mm, horizon=len_forecast_full)
-    forecast_crm = out_of_sample_ts_forecast(pipeline_crm, input_data_predict_mm_crm, horizon=len_forecast_full)
-
-    predicted = np.ravel(np.array(forecast))
-    predicted_crm = np.ravel(np.array(forecast_crm))
-    predicted_only_crm = np.asarray(df_crm[f'crm_{well_id}'][-len_forecast_full:])
-
-    test_data = np.ravel(test_data)
-
-    print('CRM')
-    predicted_only_crm[np.isnan(predicted_only_crm)] = 0
-    mse_before = mean_squared_error(test_data, predicted_only_crm, squared=False)
-    mae_before = mean_absolute_error(test_data, predicted_only_crm)
-    print(f'RMSE - {mse_before:.4f}')
-    print(f'MAE - {mae_before:.4f}\n')
-
-    print('ML')
-    mse_before = mean_squared_error(test_data, predicted, squared=False)
-    mae_before = mean_absolute_error(test_data, predicted)
-    print(f'RMSE - {mse_before:.4f}')
-    print(f'MAE - {mae_before:.4f}\n')
-
-    print('AutoML+CRM')
-    mse_before = mean_squared_error(test_data, predicted_crm, squared=False)
-    mae_before = mean_absolute_error(test_data, predicted_crm)
-    print(f'RMSE - {mse_before:.4f}')
-    print(f'MAE - {mae_before:.4f}\n')
-
-    if with_visualisation:
-        # x = range(0, len(time_series))
-        x_for = range(len(train_data), len(time_series))
-        plt.plot(x_for, time_series[-len_forecast_full:], label='Actual time series', linewidth=0.5)
-        plt.plot(x_for, predicted, label='ML', linewidth=0.5)
-        plt.plot(x_for, predicted_crm, label='ML+CRM', linewidth=0.5)
-        plt.plot(x_for, predicted_only_crm, label='CRM', linewidth=0.5)
-
-        # ci = t_conf_interval(np.std(predicted), 0.975, len(predicted)) * 1.96
-        # plt.fill_between(x_for, (predicted - ci), (predicted + ci),
-        #                 color='orange', alpha=.5)
-
-        ci_crm = t_conf_interval(np.std(predicted_crm), 0.975, len(predicted_crm)) * 1.96
-        plt.fill_between(x_for, (predicted_crm - ci_crm), (predicted_crm + ci_crm),
-                         color='orange', alpha=.5)
-
-        ci_crmonly = t_conf_interval(np.std(predicted_only_crm), 0.975, len(predicted_only_crm)) * 1.96
-        plt.fill_between(x_for, (predicted_only_crm - ci_crmonly), (predicted_only_crm + ci_crmonly),
-                         color='green', alpha=.5)
-
-        plt.xlabel('Days from 2013.06.01')
-        plt.ylabel('Oil volume, m3')
-        plt.legend()
-        # plt.grid()
-        plt.title(well_id)
-        plt.tight_layout()
-        plt.show()
 
 
 if __name__ == '__main__':
