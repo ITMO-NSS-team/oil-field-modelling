@@ -53,7 +53,7 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
         input_data_fit[var_name] = train_input
         input_data_predict[var_name] = predict_input
 
-    return dates, target_train, input_data_fit, input_data_predict, test_data, train_data, time_series
+    return dates, target_train, input_data_fit, input_data_predict, predict_input, train_input, time_series
 
 
 def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_forecast_full,
@@ -62,11 +62,8 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
     df_crm = pd.read_csv(path_to_file_crm)
 
     len_forecast_for_split = len_forecast_full
-    dates, target_train, input_data_fit, input_data_predict, test_data, \
-    train_data, time_series = prepare_dataset(df, len_forecast, len_forecast_for_split, well_id)
-
-    dates, target_train_crm, input_data_fit_crm, input_data_predict_crm, test_data_crm, \
-    train_data, time_series = prepare_dataset(df_crm, len_forecast, len_forecast_for_split, well_id)
+    dates, target_train, input_data_fit, input_data_predict, test_data, train_data, time_series = \
+        prepare_dataset(df, len_forecast, len_forecast_for_split, well_id)
 
     task_parameters = TsForecastingParams(forecast_length=len_forecast)
     train_data.task.task_params = task_parameters

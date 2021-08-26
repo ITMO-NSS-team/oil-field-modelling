@@ -1,12 +1,10 @@
 import os
 import warnings
-from functools import partial
 
 import numpy as np
 import pandas as pd
 from examples.time_series.ts_forecasting_tuning import prepare_input_data
-from fedot.api.api_utils import _create_multidata_pipeline, array_to_input_data
-from fedot.api.main import Fedot, _extract_features_from_data_part, _get_source_type
+from fedot.api.main import Fedot
 from fedot.core.data.multi_modal import MultiModalData
 from fedot.core.pipelines.pipeline import Pipeline
 from fedot.core.pipelines.ts_wrappers import out_of_sample_ts_forecast
@@ -51,7 +49,7 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
 
         task.task_params.forecast_length = len_forecast
 
-        if 'crm' in var_name:
+        if 'crm2' in var_name:
             var_name = f'exog_{var_name}'
         input_data_fit[var_name] = train_input
         input_data_predict[var_name] = predict_input
@@ -73,20 +71,6 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
 
     task_parameters = TsForecastingParams(forecast_length=len_forecast)
 
-    ###############
-    data_part_transformation_func = partial(array_to_input_data,
-                                            target_array=train_data.target, task=train_data.task)
-
-    # create labels for data sources
-    sources = dict(
-        (f'{_get_source_type(data_part_key)}/{data_part_key}', data_part_transformation_func(
-            features_array=_extract_features_from_data_part(data_part)))
-        for (data_part_key, data_part) in train_data.features.items())
-    data = MultiModalData(sources)
-    pp = Pipeline(_create_multidata_pipeline(train_data.task, train_data, has_categorical_features=False))
-    pp.fit(data)
-    ##########
-
     if not os.path.exists(f'pipeline_{well_id}/pipeline_{well_id}.json'):
         model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=1,
                       verbose_level=4)
@@ -99,7 +83,7 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
         pipeline.load(f'pipeline_{well_id}/pipeline_{well_id}.json')
 
     if not os.path.exists(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json'):
-        model = Fedot(problem='ts_forecasting', task_params=task_parameters, verbose_level=4)
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=1, verbose_level=4)
 
         # run AutoML model design in the same way
         pipeline_crm = model.fit(features=input_data_fit_crm, target=target_train_crm)
@@ -152,17 +136,17 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
         plt.plot(x_for, predicted_crm, label='ML+CRM', linewidth=0.5)
         plt.plot(x_for, predicted_only_crm, label='CRM', linewidth=0.5)
 
-        # ci = t_conf_interval(np.std(predicted), 0.975, len(predicted)) * 1.96
-        # plt.fill_between(x_for, (predicted - ci), (predicted + ci),
-        #                 color='orange', alpha=.5)
+        ci = t_conf_interval(np.std(predicted), 0.975, len(predicted)) * 1.96
+        plt.fill_between(x_for, (predicted - ci), (predicted + ci),
+                         color='orange', alpha=.5)
 
         ci_crm = t_conf_interval(np.std(predicted_crm), 0.975, len(predicted_crm)) * 1.96
         plt.fill_between(x_for, (predicted_crm - ci_crm), (predicted_crm + ci_crm),
-                         color='orange', alpha=.5)
+                         color='green', alpha=.5)
 
         ci_crmonly = t_conf_interval(np.std(predicted_only_crm), 0.975, len(predicted_only_crm)) * 1.96
         plt.fill_between(x_for, (predicted_only_crm - ci_crmonly), (predicted_only_crm + ci_crmonly),
-                         color='green', alpha=.5)
+                         color='red', alpha=.5)
 
         plt.xlabel('Days from 2013.06.01')
         plt.ylabel('Oil volume, m3')
