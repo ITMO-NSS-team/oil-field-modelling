@@ -57,10 +57,12 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
     return dates, target_train, input_data_fit, input_data_predict, test_data, train_data, time_series
 
 
+
 def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_forecast_full,
-                        with_visualisation, well_id) -> None:
-    df = pd.read_csv(path_to_file)
-    df_crm = pd.read_csv(path_to_file_crm)
+                        ax, well_id) -> None:
+    timeout = 5
+    df = pd.read_csv(path_to_file, sep=' *, *')
+    df_crm = pd.read_csv(path_to_file_crm, sep=' *, *')
 
     len_forecast_for_split = len_forecast_full
     dates, target_train, input_data_fit, input_data_predict, test_data, \
@@ -72,7 +74,7 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
     task_parameters = TsForecastingParams(forecast_length=len_forecast)
 
     if not os.path.exists(f'pipeline_{well_id}/pipeline_{well_id}.json'):
-        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=1,
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=timeout,
                       verbose_level=4)
 
         # run AutoML model design in the same way
@@ -83,7 +85,7 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
         pipeline.load(f'pipeline_{well_id}/pipeline_{well_id}.json')
 
     if not os.path.exists(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json'):
-        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=1, verbose_level=4)
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=timeout, verbose_level=4)
 
         # run AutoML model design in the same way
         pipeline_crm = model.fit(features=input_data_fit_crm, target=target_train_crm)
@@ -128,37 +130,42 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
     print(f'RMSE - {mse_before:.4f}')
     print(f'MAE - {mae_before:.4f}\n')
 
-    if with_visualisation:
+    if ax:
         # x = range(0, len(time_series))
         x_for = range(len(train_data), len(time_series))
-        plt.plot(x_for, time_series[-len_forecast_full:], label='Actual time series', linewidth=0.5)
-        plt.plot(x_for, predicted, label='ML', linewidth=0.5)
-        plt.plot(x_for, predicted_crm, label='ML+CRM', linewidth=0.5)
-        plt.plot(x_for, predicted_only_crm, label='CRM', linewidth=0.5)
+        ax.plot(x_for, time_series[-len_forecast_full:], label='Actual time series', linewidth=0.5)
+        # plt.plot(x_for, predicted, label='ML', linewidth=0.5)
+        ax.plot(x_for, predicted_crm, label='AutoML+CRM', linewidth=0.5)
+        ax.plot(x_for, predicted_only_crm, label='CRM', linewidth=0.5)
 
-        ci = t_conf_interval(np.std(predicted), 0.975, len(predicted)) * 1.96
-        plt.fill_between(x_for, (predicted - ci), (predicted + ci),
-                         color='orange', alpha=.5)
+        # ci = t_conf_interval(np.std(predicted), 0.975, len(predicted)) * 1.96
+        # plt.fill_between(x_for, (predicted - ci), (predicted + ci),
+        #                 color='orange', alpha=.5)
 
         ci_crm = t_conf_interval(np.std(predicted_crm), 0.975, len(predicted_crm)) * 1.96
-        plt.fill_between(x_for, (predicted_crm - ci_crm), (predicted_crm + ci_crm),
-                         color='green', alpha=.5)
+        ax.fill_between(x_for, (predicted_crm - ci_crm), (predicted_crm + ci_crm),
+                        color='orange', alpha=.5)
 
         ci_crmonly = t_conf_interval(np.std(predicted_only_crm), 0.975, len(predicted_only_crm)) * 1.96
-        plt.fill_between(x_for, (predicted_only_crm - ci_crmonly), (predicted_only_crm + ci_crmonly),
-                         color='red', alpha=.5)
+        ax.fill_between(x_for, (predicted_only_crm - ci_crmonly), (predicted_only_crm + ci_crmonly),
+                        color='green', alpha=.5)
 
-        plt.xlabel('Days from 2013.06.01')
-        plt.ylabel('Oil volume, m3')
-        plt.legend()
+        ax.set(xlabel='Days from 2013.06.01', ylabel='Oil volume, m3')
+        ax.legend()
         # plt.grid()
-        plt.title(well_id)
-        plt.tight_layout()
-        plt.show()
+        ax.set_title(well_id)
+        # ax.tight_layout()
+        ax.plot()
+        # ax.savefig(well_id)
+        # plt.clf()
 
 
 if __name__ == '__main__':
-    for well in ['7078']:  # ['5351', '5599', '7078', '7289']:  # , '7405f']:
+    fig, axs = plt.subplots(2, 2)
+    axes = [axs[0, 0], axs[0, 1], axs[1, 0], axs[1, 1]]
+
+    for well_num, well in enumerate(['5351', '5599', '7078', '7289']):  # , '7405f']:
+        ax = axes[well_num]
         full_path_train_crm = f'input_data/oil_crm_prod_X{well}.csv'
         full_path_train_crm = os.path.join(str(project_root()), full_path_train_crm)
 
@@ -169,5 +176,10 @@ if __name__ == '__main__':
                             path_to_file_crm=full_path_train_crm,
                             len_forecast=100,
                             len_forecast_full=400,
-                            with_visualisation=True,
+                            ax=ax,
                             well_id=well)
+        for ax in axs.flat:
+            ax.label_outer()
+    fig.show()
+    fig.tight_layout()
+    fig.savefig('res_forecast.png')
