@@ -3,12 +3,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from examples.time_series.ts_forecasting_tuning import prepare_input_data
 from fedot.api.main import Fedot
+from fedot.core.data.data import InputData
 from fedot.core.data.multi_modal import MultiModalData
 from fedot.core.pipelines.pipeline import Pipeline
-from fedot.core.pipelines.ts_wrappers import out_of_sample_ts_forecast
-from fedot.core.repository.tasks import TsForecastingParams
+from fedot.core.pipelines.ts_wrappers import in_sample_ts_forecast
+from fedot.core.repository.dataset_types import DataTypesEnum
+from fedot.core.repository.tasks import Task, TaskTypesEnum, TsForecastingParams
 from matplotlib import pyplot as plt
 from scipy.stats import t as student
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -22,6 +23,38 @@ np.random.seed(2021)
 def t_conf_interval(std, percentile, n):
     quantile = student.ppf(percentile, n)
     return std * quantile / np.sqrt(n)
+
+
+def prepare_input_data(len_forecast, train_data_features, train_data_target):
+    """ Return prepared data for fit and predict
+
+    :param len_forecast: forecast length
+    :param train_data_features: time series which can be used as predictors for train
+    :param train_data_target: time series which can be used as target for train
+
+    :return train_input: Input Data for fit
+    :return predict_input: Input Data for predict
+    :return task: Time series forecasting task with parameters
+    """
+
+    task = Task(TaskTypesEnum.ts_forecasting,
+                TsForecastingParams(forecast_length=len_forecast))
+
+    train_input = InputData(idx=np.arange(0, len(train_data_features)),
+                            features=train_data_features,
+                            target=train_data_target,
+                            task=task,
+                            data_type=DataTypesEnum.ts)
+
+    start_forecast = len(train_data_features)
+    end_forecast = start_forecast + len_forecast
+    predict_input = InputData(idx=np.arange(0, end_forecast),
+                              features=train_data_features,
+                              target=None,
+                              task=task,
+                              data_type=DataTypesEnum.ts)
+
+    return train_input, predict_input, task
 
 
 def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
@@ -42,8 +75,7 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
         # Source time series
         train_input, predict_input, task = prepare_input_data(len_forecast=len_forecast,
                                                               train_data_features=train_data,
-                                                              train_data_target=target_train,
-                                                              test_data_features=test_data)
+                                                              train_data_target=target_train)
         train_input.task.task_params.forecast_length = len_forecast
         predict_input.task.task_params.forecast_length = len_forecast
 
@@ -55,7 +87,6 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
         input_data_predict[var_name] = predict_input
 
     return dates, target_train, input_data_fit, input_data_predict, test_data, train_data, time_series
-
 
 
 def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_forecast_full,
@@ -79,7 +110,7 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
 
         # run AutoML model design in the same way
         pipeline = model.fit(features=input_data_fit, target=target_train)
-        pipeline.save(f'pipeline_{well_id}', datetime_in_path=False)
+        pipeline.save(f'pipeline_{well_id}')  # , datetime_in_path=False)
     else:
         pipeline = Pipeline()
         pipeline.load(f'pipeline_{well_id}/pipeline_{well_id}.json')
@@ -89,7 +120,7 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
 
         # run AutoML model design in the same way
         pipeline_crm = model.fit(features=input_data_fit_crm, target=target_train_crm)
-        pipeline_crm.save(f'pipeline_crm_{well_id}', datetime_in_path=False)
+        pipeline_crm.save(f'pipeline_crm_{well_id}')  #, datetime_in_path=False)
     else:
         pipeline_crm = Pipeline()
         pipeline_crm.load(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json')
@@ -102,8 +133,8 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
                        for (data_part_key, data_part) in input_data_predict_crm.items())
     input_data_predict_mm_crm = MultiModalData(sources_crm)
 
-    forecast = out_of_sample_ts_forecast(pipeline, input_data_predict_mm, horizon=len_forecast_full)
-    forecast_crm = out_of_sample_ts_forecast(pipeline_crm, input_data_predict_mm_crm, horizon=len_forecast_full)
+    forecast = in_sample_ts_forecast(pipeline, input_data_predict_mm, horizon=len_forecast_full)
+    forecast_crm = in_sample_ts_forecast(pipeline_crm, input_data_predict_mm_crm, horizon=len_forecast_full)
 
     predicted = np.ravel(np.array(forecast))
     predicted_crm = np.ravel(np.array(forecast_crm))
@@ -151,7 +182,8 @@ def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_foreca
                         color='green', alpha=.5)
 
         ax.set(xlabel='Days from 2013.06.01', ylabel='Oil volume, m3')
-        ax.legend()
+        if well_id == '5351':
+            ax.legend()
         # plt.grid()
         ax.set_title(well_id)
         # ax.tight_layout()
