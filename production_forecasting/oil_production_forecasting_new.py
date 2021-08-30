@@ -49,7 +49,7 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
 
         task.task_params.forecast_length = len_forecast
 
-        if 'crm2' in var_name:
+        if 'crm' in var_name:
             var_name = f'exog_{var_name}'
         input_data_fit[var_name] = train_input
         input_data_predict[var_name] = predict_input
