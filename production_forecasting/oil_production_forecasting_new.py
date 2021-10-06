@@ -61,6 +61,10 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
     var_names = df.columns
     input_data_fit = {}
     input_data_predict = {}
+
+    data_fit = {}
+    data_predict = {}
+
     target_train = np.asarray(df[f'prod_X{target_well_id}'][:-len_forecast_for_split])
     for var_name in var_names:
         if var_name == 'DATEPRD':
@@ -86,40 +90,45 @@ def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
         input_data_fit[var_name] = train_input
         input_data_predict[var_name] = predict_input
 
-    return dates, target_train, input_data_fit, input_data_predict, test_data, train_data, time_series
+        data_fit[var_name] = train_input.features
+        data_predict[var_name] = predict_input.features
+
+    return dates, target_train, data_fit, data_predict, input_data_fit, input_data_predict, test_data, train_data, time_series
 
 
 def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_forecast_full,
                         ax, well_id) -> None:
-    timeout = 5
+    timeout = 1
     df = pd.read_csv(path_to_file, sep=' *, *')
     df_crm = pd.read_csv(path_to_file_crm, sep=' *, *')
 
     len_forecast_for_split = len_forecast_full
-    dates, target_train, input_data_fit, input_data_predict, test_data, \
+    dates, target_train, data_fit, data_predict, input_data_fit, input_data_predict, test_data, \
     train_data, time_series = prepare_dataset(df, len_forecast, len_forecast_for_split, well_id)
 
-    dates, target_train_crm, input_data_fit_crm, input_data_predict_crm, test_data_crm, \
+    dates, target_train_crm, data_fit_crm, data_predict_crm,input_data_fit_crm, input_data_predict_crm, test_data_crm, \
     train_data, time_series = prepare_dataset(df_crm, len_forecast, len_forecast_for_split, well_id)
 
     task_parameters = TsForecastingParams(forecast_length=len_forecast)
 
     if not os.path.exists(f'pipeline_{well_id}/pipeline_{well_id}.json'):
-        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=timeout,
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, composer_params={'timeout': timeout},
+                      preset='ultra_light',
                       verbose_level=4)
 
         # run AutoML model design in the same way
-        pipeline = model.fit(features=input_data_fit, target=target_train)
+        pipeline = model.fit(features=data_fit, target=target_train)
         pipeline.save(f'pipeline_{well_id}')  # , datetime_in_path=False)
     else:
         pipeline = Pipeline()
         pipeline.load(f'pipeline_{well_id}/pipeline_{well_id}.json')
 
     if not os.path.exists(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json'):
-        model = Fedot(problem='ts_forecasting', task_params=task_parameters, timeout=timeout, verbose_level=4)
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, composer_params={'timeout': timeout},
+                      preset='ultra_light', verbose_level=4)
 
         # run AutoML model design in the same way
-        pipeline_crm = model.fit(features=input_data_fit_crm, target=target_train_crm)
+        pipeline_crm = model.fit(features=data_fit_crm, target=target_train_crm)
         pipeline_crm.save(f'pipeline_crm_{well_id}')  #, datetime_in_path=False)
     else:
         pipeline_crm = Pipeline()
@@ -196,7 +205,7 @@ if __name__ == '__main__':
     fig, axs = plt.subplots(2, 2)
     axes = [axs[0, 0], axs[0, 1], axs[1, 0], axs[1, 1]]
 
-    for well_num, well in enumerate(['5351', '5599', '7078', '7289']):  # , '7405f']:
+    for well_num, well in enumerate(['5351']):  # , '7405f']:
         ax = axes[well_num]
         full_path_train_crm = f'input_data/oil_crm_prod_X{well}.csv'
         full_path_train_crm = os.path.join(str(project_root()), full_path_train_crm)
@@ -207,7 +216,7 @@ if __name__ == '__main__':
         run_oil_forecasting(path_to_file=full_path_train,
                             path_to_file_crm=full_path_train_crm,
                             len_forecast=100,
-                            len_forecast_full=400,
+                            len_forecast_full=100,
                             ax=ax,
                             well_id=well)
         for ax in axs.flat:
