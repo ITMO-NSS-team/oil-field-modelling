@@ -1,0 +1,610 @@
+{
+  "total_pipeline_operations": [
+	"data_source_ts/prod_X7405f", "lagged", "ridge", "data_source_ts/prod_X7078", "data_source_ts/prod_X5351", "data_source_ts/prod_X7289", "data_source_ts/in_X7405f", "data_source_ts/in_X7078", "data_source_ts/in_X5599", "data_source_ts/in_X5351", "data_source_ts/in_X7289", "data_source_ts/pres_X7405f", "data_source_ts/pres_X7078", "data_source_ts/pres_X5599", "data_source_ts/pres_X5351", "data_source_ts/pres_X7289", "data_source_ts/prod_X5599"
+  ],
+  "depth": 4,
+  "nodes": [
+	{
+	  "operation_id": 3,
+	  "operation_type": "data_source_ts/prod_X7405f",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_3.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 2,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 407.392927767209
+	  },
+	  "params": {
+		"window_size": 407.392927767209
+	  },
+	  "nodes_from": [
+		3
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_2.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 1,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 3.6933488765154516
+	  },
+	  "params": {
+		"alpha": 3.6933488765154516
+	  },
+	  "nodes_from": [
+		2
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_1.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 6,
+	  "operation_type": "data_source_ts/prod_X7078",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_6.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 5,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 315.25291995587895
+	  },
+	  "params": {
+		"window_size": 315.25291995587895
+	  },
+	  "nodes_from": [
+		6
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_5.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 4,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 8.86621444431654
+	  },
+	  "params": {
+		"alpha": 8.86621444431654
+	  },
+	  "nodes_from": [
+		5
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_4.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 9,
+	  "operation_type": "data_source_ts/prod_X5351",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_9.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 8,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 151.02688629168713
+	  },
+	  "params": {
+		"window_size": 151.02688629168713
+	  },
+	  "nodes_from": [
+		9
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_8.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 7,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 0.16140805370635983
+	  },
+	  "params": {
+		"alpha": 0.16140805370635983
+	  },
+	  "nodes_from": [
+		8
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_7.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 12,
+	  "operation_type": "data_source_ts/prod_X7289",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_12.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 11,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 292.1597968626699
+	  },
+	  "params": {
+		"window_size": 292.1597968626699
+	  },
+	  "nodes_from": [
+		12
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_11.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 10,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 4.0597241051177635
+	  },
+	  "params": {
+		"alpha": 4.0597241051177635
+	  },
+	  "nodes_from": [
+		11
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_10.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 15,
+	  "operation_type": "data_source_ts/in_X7405f",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_15.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 14,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 439.03806993400434
+	  },
+	  "params": {
+		"window_size": 439.03806993400434
+	  },
+	  "nodes_from": [
+		15
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_14.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 13,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 6.513867441689898
+	  },
+	  "params": {
+		"alpha": 6.513867441689898
+	  },
+	  "nodes_from": [
+		14
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_13.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 18,
+	  "operation_type": "data_source_ts/in_X7078",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_18.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 17,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 91.59926662516392
+	  },
+	  "params": {
+		"window_size": 91.59926662516392
+	  },
+	  "nodes_from": [
+		18
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_17.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 16,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 5.792453875026791
+	  },
+	  "params": {
+		"alpha": 5.792453875026791
+	  },
+	  "nodes_from": [
+		17
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_16.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 21,
+	  "operation_type": "data_source_ts/in_X5599",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_21.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 20,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 196.78401089034026
+	  },
+	  "params": {
+		"window_size": 196.78401089034026
+	  },
+	  "nodes_from": [
+		21
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_20.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 19,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 0.3764929500432775
+	  },
+	  "params": {
+		"alpha": 0.3764929500432775
+	  },
+	  "nodes_from": [
+		20
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_19.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 24,
+	  "operation_type": "data_source_ts/in_X5351",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_24.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 23,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 159.7007325838764
+	  },
+	  "params": {
+		"window_size": 159.7007325838764
+	  },
+	  "nodes_from": [
+		24
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_23.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 22,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 0.48861898985155955
+	  },
+	  "params": {
+		"alpha": 0.48861898985155955
+	  },
+	  "nodes_from": [
+		23
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_22.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 27,
+	  "operation_type": "data_source_ts/in_X7289",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_27.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 26,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 387.8067260721035
+	  },
+	  "params": {
+		"window_size": 387.8067260721035
+	  },
+	  "nodes_from": [
+		27
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_26.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 25,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 8.965150947612415
+	  },
+	  "params": {
+		"alpha": 8.965150947612415
+	  },
+	  "nodes_from": [
+		26
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_25.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 30,
+	  "operation_type": "data_source_ts/pres_X7405f",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_30.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 29,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 27.628949823785618
+	  },
+	  "params": {
+		"window_size": 27.628949823785618
+	  },
+	  "nodes_from": [
+		30
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_29.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 28,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 5.836650146417705
+	  },
+	  "params": {
+		"alpha": 5.836650146417705
+	  },
+	  "nodes_from": [
+		29
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_28.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 33,
+	  "operation_type": "data_source_ts/pres_X7078",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_33.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 32,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 210.48020097915855
+	  },
+	  "params": {
+		"window_size": 210.48020097915855
+	  },
+	  "nodes_from": [
+		33
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_32.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 31,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 6.451881788923785
+	  },
+	  "params": {
+		"alpha": 6.451881788923785
+	  },
+	  "nodes_from": [
+		32
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_31.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 36,
+	  "operation_type": "data_source_ts/pres_X5599",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_36.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 35,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 188.85308419866644
+	  },
+	  "params": {
+		"window_size": 188.85308419866644
+	  },
+	  "nodes_from": [
+		36
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_35.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 34,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 6.562314184987362
+	  },
+	  "params": {
+		"alpha": 6.562314184987362
+	  },
+	  "nodes_from": [
+		35
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_34.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 39,
+	  "operation_type": "data_source_ts/pres_X5351",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_39.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 38,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 212.57887241635123
+	  },
+	  "params": {
+		"window_size": 212.57887241635123
+	  },
+	  "nodes_from": [
+		39
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_38.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 37,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 9.080269862169265
+	  },
+	  "params": {
+		"alpha": 9.080269862169265
+	  },
+	  "nodes_from": [
+		38
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_37.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 42,
+	  "operation_type": "data_source_ts/pres_X7289",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_42.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 41,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 363.5894792320304
+	  },
+	  "params": {
+		"window_size": 363.5894792320304
+	  },
+	  "nodes_from": [
+		42
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_41.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 40,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 9.965952726991166
+	  },
+	  "params": {
+		"alpha": 9.965952726991166
+	  },
+	  "nodes_from": [
+		41
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_40.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 45,
+	  "operation_type": "data_source_ts/prod_X5599",
+	  "operation_name": "object",
+	  "custom_params": "default_params",
+	  "params": {},
+	  "nodes_from": [],
+	  "fitted_operation_path": "fitted_operations\\operation_45.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 44,
+	  "operation_type": "lagged",
+	  "operation_name": "LaggedTransformationImplementation",
+	  "custom_params": {
+		"window_size": 84.28337271948315
+	  },
+	  "params": {
+		"window_size": 84.28337271948315
+	  },
+	  "nodes_from": [
+		45
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_44.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 43,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 6.852738313674059
+	  },
+	  "params": {
+		"alpha": 6.852738313674059
+	  },
+	  "nodes_from": [
+		44
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_43.pkl",
+	  "rating": null
+	}, {
+	  "operation_id": 0,
+	  "operation_type": "ridge",
+	  "operation_name": "Ridge",
+	  "custom_params": {
+		"alpha": 7.068141266594513
+	  },
+	  "params": {
+		"alpha": 7.068141266594513
+	  },
+	  "nodes_from": [
+		1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43
+	  ],
+	  "fitted_operation_path": "fitted_operations\\operation_0.pkl",
+	  "rating": null
+	}
+  ],
+  "descriptive_id": "(((/n_data_source_ts/in_X5351_default_params;)/n_lagged_{'window_size': 159.7007325838764};)/n_ridge_{'alpha': 0.48861898985155955};;((/n_data_source_ts/in_X5599_default_params;)/n_lagged_{'window_size': 196.78401089034026};)/n_ridge_{'alpha': 0.3764929500432775};;((/n_data_source_ts/in_X7078_default_params;)/n_lagged_{'window_size': 91.59926662516392};)/n_ridge_{'alpha': 5.792453875026791};;((/n_data_source_ts/in_X7289_default_params;)/n_lagged_{'window_size': 387.8067260721035};)/n_ridge_{'alpha': 8.965150947612415};;((/n_data_source_ts/in_X7405f_default_params;)/n_lagged_{'window_size': 439.03806993400434};)/n_ridge_{'alpha': 6.513867441689898};;((/n_data_source_ts/pres_X5351_default_params;)/n_lagged_{'window_size': 212.57887241635123};)/n_ridge_{'alpha': 9.080269862169265};;((/n_data_source_ts/pres_X5599_default_params;)/n_lagged_{'window_size': 188.85308419866644};)/n_ridge_{'alpha': 6.562314184987362};;((/n_data_source_ts/pres_X7078_default_params;)/n_lagged_{'window_size': 210.48020097915855};)/n_ridge_{'alpha': 6.451881788923785};;((/n_data_source_ts/pres_X7289_default_params;)/n_lagged_{'window_size': 363.5894792320304};)/n_ridge_{'alpha': 9.965952726991166};;((/n_data_source_ts/pres_X7405f_default_params;)/n_lagged_{'window_size': 27.628949823785618};)/n_ridge_{'alpha': 5.836650146417705};;((/n_data_source_ts/prod_X5351_default_params;)/n_lagged_{'window_size': 151.02688629168713};)/n_ridge_{'alpha': 0.16140805370635983};;((/n_data_source_ts/prod_X5599_default_params;)/n_lagged_{'window_size': 84.28337271948315};)/n_ridge_{'alpha': 6.852738313674059};;((/n_data_source_ts/prod_X7078_default_params;)/n_lagged_{'window_size': 315.25291995587895};)/n_ridge_{'alpha': 8.86621444431654};;((/n_data_source_ts/prod_X7289_default_params;)/n_lagged_{'window_size': 292.1597968626699};)/n_ridge_{'alpha': 4.0597241051177635};;((/n_data_source_ts/prod_X7405f_default_params;)/n_lagged_{'window_size': 407.392927767209};)/n_ridge_{'alpha': 3.6933488765154516};)/n_ridge_{'alpha': 7.068141266594513}"
+}

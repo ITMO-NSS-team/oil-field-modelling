@@ -1,20 +1,22 @@
-import datetime
 import os
-from copy import copy
+import warnings
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
-from fedot.core.chains.node import PrimaryNode
-from fedot.core.chains.ts_chain import TsForecastingChain
+from fedot.api.main import Fedot
 from fedot.core.data.data import InputData
+from fedot.core.data.multi_modal import MultiModalData
+from fedot.core.pipelines.pipeline import Pipeline
+from fedot.core.pipelines.ts_wrappers import in_sample_ts_forecast
 from fedot.core.repository.dataset_types import DataTypesEnum
 from fedot.core.repository.tasks import Task, TaskTypesEnum, TsForecastingParams
+from matplotlib import pyplot as plt
+from scipy.stats import t as student
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from toolbox.forecasting_utils import calculate_validation_metric, get_comp_chain, merge_datasets
-
-forecast_window_shift_num = 4
-
-depth = 100
+warnings.filterwarnings('ignore')
+np.random.seed(2021)
 
 
 def project_root() -> Path:
@@ -22,122 +24,200 @@ def project_root() -> Path:
     return Path(__file__).parent
 
 
-def run_oil_forecasting(train_file_path,
-                        train_file_path_crm,
-                        forecast_length=25, max_window_size=50,
-                        is_visualise=False,
-                        well_id='Unknown',
-                        max_time=datetime.timedelta(minutes=10)):
+def t_conf_interval(std, percentile, n):
+    quantile = student.ppf(percentile, n)
+    return std * quantile / np.sqrt(n)
+
+
+def prepare_input_data(len_forecast, train_data_features, train_data_target):
+    """ Return prepared data for fit and predict
+
+    :param len_forecast: forecast length
+    :param train_data_features: time series which can be used as predictors for train
+    :param train_data_target: time series which can be used as target for train
+
+    :return train_input: Input Data for fit
+    :return predict_input: Input Data for predict
+    :return task: Time series forecasting task with parameters
     """
-    :param train_file_path: path to the historical well input_data
-    :param train_file_path_crm: path to the CRM forecasts
-    :param forecast_length: the length of the forecast for one iteration
-    :param max_window_size: the size of the forecast window
-    :param is_visualise: generate images of results
-    :param well_id: id of the well to simulate
-    :return: quality metrics
-    """
-    # specify the task to solve
-    task_to_solve = Task(TaskTypesEnum.ts_forecasting,
-                         TsForecastingParams(forecast_length=forecast_length,
-                                             max_window_size=max_window_size,
-                                             return_all_steps=False,
-                                             make_future_prediction=False))
 
-    full_path_train = train_file_path
-    dataset_to_train = InputData.from_csv(
-        full_path_train, task=task_to_solve, data_type=DataTypesEnum.ts,
-        delimiter=',')
-    dataset_to_train.task.task_params.return_all_steps = True
+    task = Task(TaskTypesEnum.ts_forecasting,
+                TsForecastingParams(forecast_length=len_forecast))
 
-    # a dataset for a final validation of the composed model
-    full_path_test = train_file_path
-    dataset_to_validate = InputData.from_csv(
-        full_path_test, task=task_to_solve, data_type=DataTypesEnum.ts,
-        delimiter=',')
+    train_input = InputData(idx=np.arange(0, len(train_data_features)),
+                            features=train_data_features,
+                            target=train_data_target,
+                            task=task,
+                            data_type=DataTypesEnum.ts)
 
-    full_path_train_crm = train_file_path_crm
-    dataset_to_train_crm = InputData.from_csv(
-        full_path_train_crm, task=task_to_solve, data_type=DataTypesEnum.ts,
-        delimiter=',')
-    dataset_to_train_crm.task.task_params.return_all_steps = True
+    start_forecast = len(train_data_features)
+    end_forecast = start_forecast + len_forecast
+    predict_input = InputData(idx=np.arange(0, end_forecast),
+                              features=train_data_features,
+                              target=None,
+                              task=task,
+                              data_type=DataTypesEnum.ts)
 
-    dataset_to_validate_crm = copy(dataset_to_train_crm)
+    return train_input, predict_input, task
 
-    prediction_full = None
-    prediction_full_crm = None
-    prediction_full_crm_opt = None
 
-    for forecasting_step in range(forecast_window_shift_num):
-        start = 0
-        end = depth * (forecasting_step + 1)
+def prepare_dataset(df, len_forecast, len_forecast_for_split, target_well_id):
+    var_names = df.columns
+    input_data_fit = {}
+    input_data_predict = {}
 
-        dataset_to_train_local = dataset_to_train.subset(start, end)
-        dataset_to_train_local_crm = dataset_to_train_crm.subset(start, end)
+    data_fit = {}
+    data_predict = {}
 
-        start = depth * (forecasting_step + 1)
-        end = depth * (forecasting_step + 2)
+    target_train = np.asarray(df[f'prod_X{target_well_id}'][:-len_forecast_for_split])
+    for var_name in var_names:
+        if var_name == 'DATEPRD':
+            dates = list(df[var_name])
+            continue
+        time_series = np.asarray(df[var_name])
 
-        dataset_to_validate_local = dataset_to_validate.subset(start + depth, end + depth)
-        dataset_to_validate_local_crm = dataset_to_validate_crm.subset(start + depth, end + depth)
+        # Let's divide our data on train and test samples
+        train_data = time_series[:(len(time_series) - len_forecast_for_split)]
+        test_data = time_series[:len_forecast_for_split]
 
-        chain_simple = TsForecastingChain(PrimaryNode('rfr'))
-        chain_simple_crm = TsForecastingChain(PrimaryNode('rfr'))
-        chain_crm_opt = get_comp_chain(f'{well_id}_{forecasting_step}', dataset_to_train_local_crm,
-                                       max_time)
+        # Source time series
+        train_input, predict_input, task = prepare_input_data(len_forecast=len_forecast,
+                                                              train_data_features=train_data,
+                                                              train_data_target=target_train)
+        train_input.task.task_params.forecast_length = len_forecast
+        predict_input.task.task_params.forecast_length = len_forecast
 
-        chain_simple.fit_from_scratch(input_data=dataset_to_train_local, verbose=False)
-        chain_simple_crm.fit_from_scratch(input_data=dataset_to_train_local_crm, verbose=False)
-        chain_crm_opt.fit_from_scratch(input_data=dataset_to_train_local_crm, verbose=False)
+        task.task_params.forecast_length = len_forecast
 
-        prediction = chain_simple.forecast(dataset_to_train_local, dataset_to_validate_local)
-        prediction_crm = chain_simple_crm.forecast(dataset_to_train_local_crm, dataset_to_validate_local_crm)
-        prediction_crm_opt = chain_crm_opt.forecast(dataset_to_train_local_crm, dataset_to_validate_local_crm)
+        if 'crm' in var_name:
+            var_name = f'exog_{var_name}'
+        input_data_fit[var_name] = train_input
+        input_data_predict[var_name] = predict_input
 
-        prediction_full = merge_datasets(prediction_full, prediction, forecasting_step)
-        prediction_full_crm = merge_datasets(prediction_full_crm, prediction_crm, forecasting_step)
-        prediction_full_crm_opt = merge_datasets(prediction_full_crm_opt, prediction_crm_opt, forecasting_step)
+        data_fit[var_name] = train_input.features
+        data_predict[var_name] = predict_input.features
 
-    real_data = dataset_to_validate.subset(start=len(dataset_to_validate.idx) - len(prediction_full_crm.idx),
-                                           end=len(dataset_to_validate.idx))
+    return dates, target_train, data_fit, data_predict, input_data_fit, input_data_predict, \
+           test_data, train_data, time_series
 
-    rmse_on_valid_simple = calculate_validation_metric(
-        prediction_full, prediction_full_crm, prediction_full_crm_opt,
-        real_data, well_id, is_visualise)
 
-    frame = pd.DataFrame({'simple_pred': prediction.predict,
-                          'prediction_crm': prediction_crm.predict,
-                          'prediction_crm_opt': prediction_crm_opt.predict})
+def run_oil_forecasting(path_to_file, path_to_file_crm, len_forecast, len_forecast_full,
+                        ax, well_id, timeout):
+    if timeout is None:
+        timeout = 1
+    df = pd.read_csv(path_to_file, sep=' *, *')
+    df_crm = pd.read_csv(path_to_file_crm, sep=' *, *')
 
-    frame.to_csv(f'predictions_{well_id}.csv')
+    len_forecast_for_split = len_forecast_full
+    dates, target_train, data_fit, data_predict, input_data_fit, input_data_predict, test_data, \
+    train_data, time_series = prepare_dataset(df, len_forecast, len_forecast_for_split, well_id)
 
-    print(well_id)
-    print(f'RMSE CRM: {round(rmse_on_valid_simple[0])}')
-    print(f'RMSE ML: {round(rmse_on_valid_simple[1])}')
-    print(f'RMSE ML with CRM: {round(rmse_on_valid_simple[2])}')
-    print(f'Evo RMSE ML with CRM: {round(rmse_on_valid_simple[3])}')
+    dates, target_train_crm, data_fit_crm, data_predict_crm, input_data_fit_crm, input_data_predict_crm, test_data_crm, \
+    train_data, time_series = prepare_dataset(df_crm, len_forecast, len_forecast_for_split, well_id)
 
-    print(f'DTW CRM: {round(rmse_on_valid_simple[4])}')
-    print(f'DTW ML: {round(rmse_on_valid_simple[5])}')
-    print(f'DTW ML with CRM: {round(rmse_on_valid_simple[6])}')
-    print(f'DTW RMSE ML with CRM: {round(rmse_on_valid_simple[7])}')
+    task_parameters = TsForecastingParams(forecast_length=len_forecast)
 
-    return rmse_on_valid_simple
+    if not os.path.exists(f'pipeline_{well_id}/pipeline_{well_id}.json'):
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, composer_params={'timeout': timeout},
+                      preset='ultra_light',
+                      verbose_level=4)
+
+        # run AutoML model design in the same way
+        pipeline = model.fit(features=data_fit, target=target_train)
+        pipeline.save(f'pipeline_{well_id}')  # , datetime_in_path=False)
+    else:
+        pipeline = Pipeline()
+        pipeline.load(f'pipeline_{well_id}/pipeline_{well_id}.json')
+
+    if not os.path.exists(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json'):
+        model = Fedot(problem='ts_forecasting', task_params=task_parameters, composer_params={'timeout': timeout},
+                      preset='ultra_light', verbose_level=4)
+
+        # run AutoML model design in the same way
+        pipeline_crm = model.fit(features=data_fit_crm, target=target_train_crm)
+        pipeline_crm.save(f'pipeline_crm_{well_id}')  # , datetime_in_path=False)
+    else:
+        pipeline_crm = Pipeline()
+        pipeline_crm.load(f'pipeline_crm_{well_id}/pipeline_crm_{well_id}.json')
+
+    sources = dict((f'data_source_ts/{data_part_key}', data_part)
+                   for (data_part_key, data_part) in input_data_predict.items())
+    input_data_predict_mm = MultiModalData(sources)
+
+    sources_crm = dict((f'data_source_ts/{data_part_key}', data_part)
+                       for (data_part_key, data_part) in input_data_predict_crm.items())
+    input_data_predict_mm_crm = MultiModalData(sources_crm)
+
+    forecast = in_sample_ts_forecast(pipeline, input_data_predict_mm, horizon=len_forecast_full)
+    forecast_crm = in_sample_ts_forecast(pipeline_crm, input_data_predict_mm_crm, horizon=len_forecast_full)
+
+    predicted = np.ravel(np.array(forecast))
+    predicted_crm = np.ravel(np.array(forecast_crm))
+    predicted_only_crm = np.asarray(df_crm[f'crm_{well_id}'][-len_forecast_full:])
+
+    test_data = np.ravel(test_data)
+
+    print('CRM')
+    predicted_only_crm[np.isnan(predicted_only_crm)] = 0
+    mse_before = mean_squared_error(test_data, predicted_only_crm, squared=False)
+    mae_before = mean_absolute_error(test_data, predicted_only_crm)
+    print(f'RMSE - {mse_before:.4f}')
+    print(f'MAE - {mae_before:.4f}\n')
+
+    print('ML')
+    mse_before = mean_squared_error(test_data, predicted, squared=False)
+    mae_before = mean_absolute_error(test_data, predicted)
+    print(f'RMSE - {mse_before:.4f}')
+    print(f'MAE - {mae_before:.4f}\n')
+
+    print('AutoML+CRM')
+    mse_before = mean_squared_error(test_data, predicted_crm, squared=False)
+    mae_before = mean_absolute_error(test_data, predicted_crm)
+    print(f'RMSE - {mse_before:.4f}')
+    print(f'MAE - {mae_before:.4f}\n')
+
+    if ax:
+        x_for = range(len(train_data), len(time_series))
+        ax.plot(x_for, time_series[-len_forecast_full:], label='Actual time series', linewidth=0.5)
+        ax.plot(x_for, predicted_crm, label='AutoML+CRM', linewidth=0.5)
+        ax.plot(x_for, predicted_only_crm, label='CRM', linewidth=0.5)
+
+        ci_crm = t_conf_interval(np.std(predicted_crm), 0.975, len(predicted_crm)) * 1.96
+        ax.fill_between(x_for, (predicted_crm - ci_crm), (predicted_crm + ci_crm),
+                        color='orange', alpha=.5)
+
+        ci_crmonly = t_conf_interval(np.std(predicted_only_crm), 0.975, len(predicted_only_crm)) * 1.96
+        ax.fill_between(x_for, (predicted_only_crm - ci_crmonly), (predicted_only_crm + ci_crmonly),
+                        color='green', alpha=.5)
+
+        ax.set(xlabel='Days from 2013.06.01', ylabel='Oil volume, m3')
+        if well_id == '5351':
+            ax.legend()
+        ax.set_title(well_id)
+        ax.plot()
+
 
 
 if __name__ == '__main__':
-    # the dataset was obtained from Volve dataset of oil field
+    fig, axs = plt.subplots(2, 2)
+    axes = [axs[0, 0], axs[0, 1], axs[1, 0], axs[1, 1]]
 
-    for well in ['5351', '5599', '7078', '7289', '7405f']:
+    for well_num, well in enumerate(['5351', '5599', '7078', '7289']):
+        ax = axes[well_num]
         full_path_train_crm = f'input_data/oil_crm_prod_X{well}.csv'
         full_path_train_crm = os.path.join(str(project_root()), full_path_train_crm)
 
         file_path_train = f'input_data/oil_prod_X{well}.csv'
         full_path_train = os.path.join(str(project_root()), file_path_train)
 
-        run_oil_forecasting(full_path_train,
-                            full_path_train_crm,
-                            forecast_length=25,
-                            max_window_size=50,
-                            is_visualise=True,
+        run_oil_forecasting(path_to_file=full_path_train,
+                            path_to_file_crm=full_path_train_crm,
+                            len_forecast=100,
+                            len_forecast_full=100,
+                            ax=ax,
                             well_id=well)
+        for ax in axs.flat:
+            ax.label_outer()
+    fig.show()
+    fig.tight_layout()
+    fig.savefig('res_forecast.png')
