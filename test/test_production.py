@@ -30,15 +30,10 @@ def test_simple_production_forecast():
     file_path_train = f'test_data/production/oil_prod_X{well}.csv'
     full_path_train = os.path.join(str(project_root()), file_path_train)
 
-    obtained_error = run_oil_forecasting(full_path_train,
-                                         full_path_train_crm,
-                                         forecast_length=25,
-                                         max_window_size=1,
-                                         is_visualise=False,
+    obtained_error = run_oil_forecasting(path_to_file=full_path_train,
+                                         path_to_file_crm=full_path_train_crm,
+                                         len_forecast=5,
+                                         len_forecast_full=5,
+                                         ax=None,
                                          well_id=well,
-                                         max_time=datetime.timedelta(minutes=0.01))
-    _clean(well)
-    # validate RMSE
-    assert all([0 < _ < 500 for _ in obtained_error[0:4]])
-    # validate DTW
-    assert all([0 < _ < 500000 for _ in obtained_error[4:8]])
+                                         timeout=0.01)
