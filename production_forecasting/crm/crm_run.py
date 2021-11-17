@@ -20,14 +20,16 @@ time_colname = 'Time [days]'
 if parse_date:
     qi[time_colname] = (qi.Date - qi.Date[0]) / pd.to_timedelta(1, unit='D')
 
+num_items = 40
+
 InjList = [x for x in qi.keys() if x.startswith('I')]
 PrdList = [x for x in qp.keys() if x.startswith('P')]
-t_arr = qi[time_colname].values
+t_arr = qi[time_colname].values[:num_items]
 
 N_inj = len(InjList)
 N_prd = len(PrdList)
-qi_arr = qi[InjList].values
-q_obs = qp[PrdList].values
+qi_arr = qi[InjList].values[:num_items, :]
+q_obs = qp[PrdList].values[:num_items, :]
 
 # Separation into training and test set
 
@@ -74,7 +76,7 @@ for i in range(N_prd):
     plt.ylabel('Total Fluid (RB)', fontsize=13)
     plt.xlabel('Time (D)', fontsize=13)
     plt.legend(fontsize=11)
-    plt.savefig(f'results/crm_well_MONSON_5.{i}.png')
+    plt.savefig(join(project_root(), 'production_forecasting', f'crm_well_MONSON_5.{i}.png'))
     plt.show()
 
 # Calculate Error
