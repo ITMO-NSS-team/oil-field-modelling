@@ -40,22 +40,22 @@ def prepare_data():
     n_train = int(percent_train * len(t_arr))
     n_test = len(t_arr) - int(percent_train * len(t_arr))
 
-    q_obs_train = q_obs[:n_train, :]
-    q_obs_test = q_obs[n_train:, :]
+    q_obs_train = q_obs[:n_train, 0]
+    q_obs_test = q_obs[n_train:, 0]
 
-    input_data_train = InputData(idx=t_arr[:n_train],
+    input_data_train = InputData(idx=np.arange(0, n_train),
                                  features=qi_arr[:n_train, 0],
                                  target=q_obs_train,
                                  data_type=DataTypesEnum.ts,
                                  task=Task(TaskTypesEnum.ts_forecasting,
-                                           task_params=TsForecastingParams(forecast_length=n_test)))
+                                           task_params=TsForecastingParams(forecast_length=1)))
 
-    input_data_test = InputData(idx=t_arr[n_train:],
+    input_data_test = InputData(idx=np.arange(n_train, len(t_arr)),
                                 features=qi_arr[n_train:, 0],
                                 target=q_obs_test,
                                 data_type=DataTypesEnum.ts,
                                 task=Task(TaskTypesEnum.ts_forecasting,
-                                          task_params=TsForecastingParams(forecast_length=n_test)))
+                                          task_params=TsForecastingParams(forecast_length=1)))
 
     return input_data_train, input_data_test
 
@@ -99,7 +99,7 @@ def get_simple_pipeline():
         lagged -> custom -> ridge
     """
     lagged_node = PrimaryNode('lagged')
-    lagged_node.custom_params = {'window_size': 10}
+    lagged_node.custom_params = {'window_size': 5}
 
     # For custom model params as initial approximation and model as function is necessary
     custom_node = SecondaryNode('custom', nodes_from=[lagged_node])
