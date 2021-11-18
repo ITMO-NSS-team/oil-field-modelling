@@ -61,10 +61,10 @@ def prepare_data():
 
 
 def crm_func(train_data, test_data, params):
-    input_series_train = train_data.features
-    input_series_test = test_data.features
+    input_series_train = train_data
+    input_series_test = test_data
 
-    q_obs_train = train_data.target
+    q_obs_train = train_data
 
     # InjList = [x for x in qi.keys() if x.startswith('I')]
     # PrdList = [x for x in qp.keys() if x.startswith('P')]
@@ -119,7 +119,7 @@ def run_exp():
     pipeline.print_structure()
 
     predicted = pipeline.predict(test_data)
-    print(predicted)
+    print(predicted.predict)
 
 
 if __name__ == '__main__':
