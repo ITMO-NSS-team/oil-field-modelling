@@ -3,6 +3,7 @@ from os.path import join as join
 import numpy as np
 import pandas as pd
 from fedot.core.data.data import InputData
+from fedot.core.data.multi_modal import MultiModalData
 from fedot.core.pipelines.node import PrimaryNode, SecondaryNode
 from fedot.core.pipelines.pipeline import Pipeline
 from fedot.core.repository.dataset_types import DataTypesEnum
@@ -38,42 +39,48 @@ def prepare_data():
     # Separation into training and test set
 
     n_train = int(percent_train * len(t_arr))
-    n_test = len(t_arr) - int(percent_train * len(t_arr))
 
-    q_obs_train = q_obs[:n_train, 0]
-    q_obs_test = q_obs[n_train:, 0]
+    q_obs_train = q_obs[:n_train, :]
+    q_obs_test = q_obs[n_train:, :]
 
-    input_data_train = InputData(idx=np.arange(0, n_train),
-                                 features=qi_arr[:n_train, 0],
-                                 target=q_obs_train,
-                                 data_type=DataTypesEnum.ts,
-                                 task=Task(TaskTypesEnum.ts_forecasting,
-                                           task_params=TsForecastingParams(forecast_length=1)))
+    forecast_length = len(q_obs_test[:, 0])
 
-    input_data_test = InputData(idx=np.arange(n_train, len(t_arr)),
-                                features=qi_arr[n_train:, 0],
-                                target=q_obs_test,
-                                data_type=DataTypesEnum.ts,
-                                task=Task(TaskTypesEnum.ts_forecasting,
-                                          task_params=TsForecastingParams(forecast_length=1)))
+    ds_train = {}
+    ds_test = {}
+
+    for i in range(qi_arr.shape[1]):
+        ds_train[f'data_source_ts/inj_{i}'] = InputData(idx=np.arange(0, n_train),
+                                                 features=qi_arr[:n_train, i],
+                                                 target=q_obs_train,
+                                                 data_type=DataTypesEnum.ts,
+                                                 task=Task(TaskTypesEnum.ts_forecasting,
+                                                           task_params=TsForecastingParams(
+                                                               forecast_length=forecast_length)))
+
+        ds_test[f'data_source_ts/inj_{i}'] = InputData(idx=np.arange(n_train, len(t_arr)),
+                                                features=qi_arr[n_train:, :],
+                                                target=q_obs_test,
+                                                data_type=DataTypesEnum.ts,
+                                                task=Task(TaskTypesEnum.ts_forecasting,
+                                                          task_params=TsForecastingParams(
+                                                              forecast_length=forecast_length)))
+    input_data_train = MultiModalData(ds_train)
+    input_data_test = MultiModalData(ds_test)
 
     return input_data_train, input_data_test
 
 
-def crm_func(train_data, test_data, params):
-    input_series_train = train_data
-    input_series_test = test_data
+def crm_fit(features: np.array, target: np.array, params: dict):
+    t_arr = np.asarray(range(len(features)))
+    input_series_train = [t_arr, features]
 
-    q_obs_train = train_data
+    q_obs_train = features
 
-    # InjList = [x for x in qi.keys() if x.startswith('I')]
-    # PrdList = [x for x in qp.keys() if x.startswith('P')]
+    n_inj = 5
+    n_prd = 5
 
-    N_inj = 5
-    N_prd = 5
-
-    tau = np.ones(N_prd)
-    gain_mat = np.ones([N_inj, N_prd])
+    tau = np.ones(n_prd)
+    gain_mat = np.ones([n_inj, n_prd])
     gain_mat = gain_mat / (np.sum(gain_mat, 1).reshape([-1, 1]))
     qp0 = np.array([[0, 0, 0, 0, 0]])
     J = np.array([[1, 1, 1, 1, 1]]) / 10
@@ -88,32 +95,51 @@ def crm_func(train_data, test_data, params):
                         q_obs=q_obs_train,
                         init_guess=init_guess)
 
-    qp_pred_test = crm_model.prod_pred(input_series=input_series_test)
+    return crm_model
 
+
+def crm_predict(fitted_model: any, features: np.array, params: dict):
+    t_arr = np.asarray(range(len(features)))
+    input_series_test = [t_arr, features]
+
+    qp_pred_test = fitted_model.prod_pred(input_series=input_series_test)
+    qp_pred_test = qp_pred_test[:, 0]
     return qp_pred_test, 'ts'
 
 
-def get_simple_pipeline():
+def get_simple_pipeline(multi_data):
     """
         Pipeline looking like this
         lagged -> custom -> ridge
     """
-    lagged_node = PrimaryNode('lagged')
-    lagged_node.custom_params = {'window_size': 5}
+
+    exog_list = []
+    for i, data_id in enumerate(multi_data.keys()):
+        if 'data_source_ts' in data_id:
+            exog_list.append(PrimaryNode(f'data_source_ts/inj_{i}'))
+    # ds = PrimaryNode('data_source_ts/prod')
+
+    # lagged_node = SecondaryNode('lagged', nodes_from=[ds])
+    # lagged_node.custom_params = {'window_size': 5}
 
     # For custom model params as initial approximation and model as function is necessary
-    custom_node = SecondaryNode('custom', nodes_from=[lagged_node])
-    custom_node.custom_params = {'model': crm_func}
+    custom_node = SecondaryNode('custom', nodes_from=exog_list)
+    custom_node.custom_params = {'model_predict': crm_predict,
+                                 'model_fit': crm_fit}
 
-    node_final = SecondaryNode('ridge', nodes_from=[custom_node])
+    ml = SecondaryNode('xgboost', nodes_from=exog_list+[PrimaryNode('data_source_ts/prod')])
+
+
+    node_final = SecondaryNode('ridge', nodes_from=[ml, custom_node])
     pipeline = Pipeline(node_final)
+    pipeline.show()
 
     return pipeline
 
 
 def run_exp():
     train_data, test_data = prepare_data()
-    pipeline = get_simple_pipeline()
+    pipeline = get_simple_pipeline(train_data)
 
     pipeline.fit_from_scratch(train_data)
     pipeline.print_structure()
