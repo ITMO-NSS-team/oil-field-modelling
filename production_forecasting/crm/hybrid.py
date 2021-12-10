@@ -19,7 +19,7 @@ def prepare_data():
 
     qi = pd.read_excel(join(filepath, 'injection.xlsx'), engine='openpyxl')
     qp = pd.read_excel(join(filepath, 'production.xlsx'), engine='openpyxl')
-    percent_train = 0.7
+    percent_train = 0.5
 
     time_colname = 'Time [days]'
     if parse_date:
@@ -43,27 +43,43 @@ def prepare_data():
     q_obs_train = q_obs[:n_train, :]
     q_obs_test = q_obs[n_train:, :]
 
-    forecast_length = len(q_obs_test[:, 0])
+    forecast_length = 2
 
     ds_train = {}
     ds_test = {}
 
+    for i in range(q_obs.shape[1]):
+        ds_train[f'data_source_ts/prod_{i}'] = InputData(idx=np.arange(0, n_train),
+                                                         features=q_obs[:n_train, i][..., np.newaxis],
+                                                         target=q_obs_train,
+                                                         data_type=DataTypesEnum.ts,
+                                                         task=Task(TaskTypesEnum.ts_forecasting,
+                                                                   task_params=TsForecastingParams(
+                                                                       forecast_length=forecast_length)))
+
+        ds_test[f'data_source_ts/prod_{i}'] = InputData(idx=np.arange(n_train, len(t_arr)),
+                                                        features=q_obs[:n_train, i][..., np.newaxis],
+                                                        target=q_obs_test,
+                                                        data_type=DataTypesEnum.ts,
+                                                        task=Task(TaskTypesEnum.ts_forecasting,
+                                                                  task_params=TsForecastingParams(
+                                                                      forecast_length=forecast_length)))
     for i in range(qi_arr.shape[1]):
         ds_train[f'data_source_ts/inj_{i}'] = InputData(idx=np.arange(0, n_train),
-                                                 features=qi_arr[:n_train, i],
-                                                 target=q_obs_train,
-                                                 data_type=DataTypesEnum.ts,
-                                                 task=Task(TaskTypesEnum.ts_forecasting,
-                                                           task_params=TsForecastingParams(
-                                                               forecast_length=forecast_length)))
+                                                        features=qi_arr[:n_train, i][..., np.newaxis],
+                                                        target=q_obs_train,
+                                                        data_type=DataTypesEnum.ts,
+                                                        task=Task(TaskTypesEnum.ts_forecasting,
+                                                                  task_params=TsForecastingParams(
+                                                                      forecast_length=forecast_length)))
 
         ds_test[f'data_source_ts/inj_{i}'] = InputData(idx=np.arange(n_train, len(t_arr)),
-                                                features=qi_arr[n_train:, :],
-                                                target=q_obs_test,
-                                                data_type=DataTypesEnum.ts,
-                                                task=Task(TaskTypesEnum.ts_forecasting,
-                                                          task_params=TsForecastingParams(
-                                                              forecast_length=forecast_length)))
+                                                       features=qi_arr[n_train:, i][..., np.newaxis],
+                                                       target=q_obs_test,
+                                                       data_type=DataTypesEnum.ts,
+                                                       task=Task(TaskTypesEnum.ts_forecasting,
+                                                                 task_params=TsForecastingParams(
+                                                                     forecast_length=forecast_length)))
     input_data_train = MultiModalData(ds_train)
     input_data_test = MultiModalData(ds_test)
 
@@ -113,24 +129,28 @@ def get_simple_pipeline(multi_data):
         lagged -> custom -> ridge
     """
 
-    exog_list = []
-    for i, data_id in enumerate(multi_data.keys()):
-        if 'data_source_ts' in data_id:
-            exog_list.append(PrimaryNode(f'data_source_ts/inj_{i}'))
-    # ds = PrimaryNode('data_source_ts/prod')
+    inj_list = []
+    prod_list = []
 
-    # lagged_node = SecondaryNode('lagged', nodes_from=[ds])
-    # lagged_node.custom_params = {'window_size': 5}
+    for i, data_id in enumerate(multi_data.keys()):
+        if 'inj_' in data_id:
+            inj_list.append(PrimaryNode(data_id))
+        if 'prod_' in data_id:
+            lagged_node = SecondaryNode('lagged', nodes_from=[PrimaryNode(data_id)])
+            lagged_node.custom_params = {'window_size': 2}
+
+            prod_list.append(lagged_node)
 
     # For custom model params as initial approximation and model as function is necessary
-    custom_node = SecondaryNode('custom', nodes_from=exog_list)
+    custom_node = SecondaryNode('custom', nodes_from=inj_list)
     custom_node.custom_params = {'model_predict': crm_predict,
                                  'model_fit': crm_fit}
 
-    ml = SecondaryNode('xgboost', nodes_from=exog_list+[PrimaryNode('data_source_ts/prod')])
+    exog_pred_node = SecondaryNode('exog_ts', nodes_from=[custom_node])
 
+    final_ens = [exog_pred_node] + prod_list
 
-    node_final = SecondaryNode('ridge', nodes_from=[ml, custom_node])
+    node_final = SecondaryNode('ridge', nodes_from=final_ens)
     pipeline = Pipeline(node_final)
     pipeline.show()
 
