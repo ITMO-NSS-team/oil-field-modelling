@@ -74,3 +74,14 @@ Procedure for starting the script is as follows:
 5. The output of the script is a file in .vtr format that can be used for 3-d visualization of the resulting oil reservoir
 
 
+## How to cite
+
+@article{nikitin2022hybrid,
+  title={Hybrid and automated machine learning approaches for oil fields development: The case study of Volve field, North Sea},
+  author={Nikitin, Nikolay O and Revin, Ilia and Hvatov, Alexander and Vychuzhanin, Pavel and Kalyuzhnaya, Anna V},
+  journal={Computers \& Geosciences},
+  volume={161},
+  pages={105061},
+  year={2022},
+  publisher={Elsevier}
+}
