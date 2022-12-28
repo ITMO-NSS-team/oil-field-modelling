@@ -11,7 +11,7 @@ from skimage.transform import resize
 
 def project_root() -> Path:
     """Returns project root folder."""
-    return Path(__file__).parent.parent.parent
+    return Path(__file__).parent.parent
 
 def create_seismic_cube(segyfile_path: str):
 
